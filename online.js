@@ -6,8 +6,8 @@
 // ── CONFIGURE AQUI ──
 // Substitua pelos valores do seu projeto no painel do Supabase:
 // Settings > API > Project URL e anon key
-const SUPABASE_URL    = 'COLE_SUA_URL_AQUI';
-const SUPABASE_ANON   = 'COLE_SUA_ANON_KEY_AQUI';
+const SUPABASE_URL    = 'https://xflxbbokctyejckrfrvw.supabase.co';
+const SUPABASE_ANON   = 'sb_publishable_cKwjYngC0ZviUMzCMNPucA_E2aGkgVR';
 
 // ── CLIENTE SUPABASE ──
 const { createClient } = supabase;
