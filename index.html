@@ -5,6 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Hogwarts RPG</title>
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=EB+Garamond:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet"/>
+  <!-- Supabase SDK -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <link rel="stylesheet" href="style.css"/>
 </head>
 <body>
@@ -23,8 +25,16 @@
 
 <div id="happ" class="th-d">
   <div class="save-ind" id="save-ind"></div>
+
+  <!-- Indicador de XP boost ativo -->
   <div id="xp-boost-timer" style="display:none;position:absolute;top:12px;right:48px;font-size:10px;font-family:'Cinzel',serif;background:rgba(255,200,0,.15);border:1px solid rgba(255,200,0,.3);padding:3px 8px;border-radius:12px;color:#ffd07d"></div>
-  <button id="btn-som" onclick="toggleSom()" style="position:absolute;top:10px;right:12px;background:none;border:none;font-size:16px;cursor:pointer;opacity:.5">🔊</button>
+
+  <!-- Badge Top 1 (visível em todas as telas quando ativo) -->
+  <div id="top1-badge" style="display:none;position:absolute;top:10px;left:50%;transform:translateX(-50%);z-index:100">
+    <div class="top1-badge-inner">⚜️ LORDE DAS SOMBRAS</div>
+  </div>
+
+  <button id="btn-som" onclick="toggleSom()" style="position:absolute;top:10px;right:12px;background:none;border:none;font-size:16px;cursor:pointer;opacity:.5;z-index:50">🔊</button>
 
   <!-- ══ INTRO ══ -->
   <div id="s-intro" class="screen active">
@@ -38,6 +48,14 @@
     </p>
     <div id="continue-section"></div>
     <button class="btn btn-center" id="start-btn" onclick="startQuiz()">Colocar o Chapéu</button>
+    <div style="text-align:center;margin-top:.8rem">
+      <button class="btn" style="font-size:11px;opacity:.7" onclick="go('s-ranking');renderRanking()">🌍 Ver Ranking Global</button>
+    </div>
+
+    <!-- Painel de autenticação na intro -->
+    <div style="margin-top:1rem">
+      <div id="auth-panel"></div>
+    </div>
   </div>
 
   <!-- ══ QUIZ ══ -->
@@ -66,6 +84,7 @@
       <button class="btn hub-btn" onclick="go('s-missoes'); renderMissoes()">📋 Missões</button>
       <button class="btn hub-btn" onclick="go('s-conquistas'); renderConquistas()">🏆 Troféus</button>
       <button class="btn hub-btn" onclick="go('s-stats'); renderStats()">📊 Stats</button>
+      <button class="btn hub-btn" onclick="go('s-ranking'); renderRanking()">🌍 Ranking</button>
     </div>
   </div>
 
@@ -87,7 +106,6 @@
   <div id="s-inv" class="screen">
     <h2>Inventário</h2>
     <div class="status-bar" id="status-inv"></div>
-    <h3>Itens</h3>
     <div class="inv-grid" id="inv-items"></div>
     <br>
     <button class="btn btn-center" onclick="voltarDoBolso()">← Voltar</button>
@@ -99,7 +117,7 @@
     <div class="status-bar" id="status-shop"></div>
     <div id="shop-items"></div>
     <br>
-    <button class="btn btn-center" onclick="go('s-map'); renderMap()">← Sair da loja</button>
+    <button class="btn btn-center" onclick="go('s-map'); renderMap()">← Voltar</button>
   </div>
 
   <!-- ══ LOJA DE MAGIA ══ -->
@@ -108,16 +126,16 @@
     <div class="status-bar" id="status-magic"></div>
     <div id="magic-items"></div>
     <br>
-    <button class="btn btn-center" onclick="go('s-map'); renderMap()">← Voltar ao mapa</button>
+    <button class="btn btn-center" onclick="go('s-map'); renderMap()">← Voltar</button>
   </div>
 
-  <!-- ══ LOJA DE DESCANSO ══ -->
+  <!-- ══ DESCANSO ══ -->
   <div id="s-rest" class="screen">
     <h2>🛏️ Pousada do Bruxo</h2>
     <div class="status-bar" id="status-rest"></div>
     <div id="rest-content"></div>
     <br>
-    <button class="btn btn-center" onclick="go('s-map'); renderMap()">← Voltar ao mapa</button>
+    <button class="btn btn-center" onclick="go('s-map'); renderMap()">← Voltar</button>
   </div>
 
   <!-- ══ MISSÕES ══ -->
@@ -125,7 +143,7 @@
     <h2>📋 Missões</h2>
     <div id="missoes-lista" style="max-height:380px;overflow-y:auto;padding-right:4px"></div>
     <br>
-    <button class="btn btn-center" onclick="go('s-map'); renderMap()">← Voltar ao mapa</button>
+    <button class="btn btn-center" onclick="go('s-map'); renderMap()">← Voltar</button>
   </div>
 
   <!-- ══ CONQUISTAS ══ -->
@@ -133,7 +151,7 @@
     <h2>🏆 Conquistas</h2>
     <div id="conquistas-lista" style="max-height:380px;overflow-y:auto;padding-right:4px"></div>
     <br>
-    <button class="btn btn-center" onclick="go('s-map'); renderMap()">← Voltar ao mapa</button>
+    <button class="btn btn-center" onclick="go('s-map'); renderMap()">← Voltar</button>
   </div>
 
   <!-- ══ ESTATÍSTICAS ══ -->
@@ -141,7 +159,35 @@
     <h2>📊 Estatísticas</h2>
     <div id="stats-content"></div>
     <br>
-    <button class="btn btn-center" onclick="go('s-map'); renderMap()">← Voltar ao mapa</button>
+    <button class="btn btn-center" onclick="go('s-map'); renderMap()">← Voltar</button>
+  </div>
+
+  <!-- ══ RANKING GLOBAL ══ -->
+  <div id="s-ranking" class="screen">
+    <h2>🌍 Ranking Global</h2>
+
+    <!-- Auth integrado na tela de ranking -->
+    <div id="auth-panel-ranking" style="margin-bottom:1rem"></div>
+
+    <div style="font-size:11px;opacity:.5;text-align:center;margin-bottom:.8rem">
+      Apenas jogadores nível 20+ aparecem no ranking
+    </div>
+
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.5rem">
+      <div style="font-family:'Cinzel',serif;font-size:10px;opacity:.4;letter-spacing:1px">
+        ⚔️ KILLS &nbsp; 👑 BOSSES &nbsp; 💥 MAIOR DANO
+      </div>
+      <button class="btn" style="font-size:10px;padding:4px 10px" onclick="renderRanking()">🔄</button>
+    </div>
+
+    <div id="ranking-loading" style="display:none;text-align:center;opacity:.5;padding:1rem;font-style:italic">
+      Carregando ranking...
+    </div>
+    <div id="ranking-lista" style="max-height:340px;overflow-y:auto;padding-right:4px"></div>
+    <div id="ranking-minha-pos" style="text-align:center;font-size:11px;opacity:.5;margin-top:.5rem;font-style:italic"></div>
+
+    <br>
+    <button class="btn btn-center" onclick="voltarDoRanking()">← Voltar</button>
   </div>
 
   <!-- ══ GAME OVER ══ -->
@@ -168,6 +214,20 @@
 
 <script src="data.js"></script>
 <script src="save.js"></script>
+<script src="online.js"></script>
 <script src="game.js"></script>
+<script>
+  // Sincroniza painel de auth na tela de ranking também
+  const _origRenderAuthUI = renderAuthUI;
+  function renderAuthUI() {
+    _origRenderAuthUI();
+    const panel2 = document.getElementById('auth-panel-ranking');
+    if (panel2) panel2.innerHTML = document.getElementById('auth-panel')?.innerHTML || '';
+  }
+
+  window.addEventListener('DOMContentLoaded', () => {
+    initOnline();
+  });
+</script>
 </body>
 </html>
