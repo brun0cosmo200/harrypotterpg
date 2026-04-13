@@ -1,317 +1,115 @@
-/* ══════════════════════════════════════════
-   RESET & BASE
-══════════════════════════════════════════ */
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+// ══════════════════════════════════════════
+//  save.js — Sistema de save com proteção anti-trapaça
+// ══════════════════════════════════════════
 
-body {
-  min-height: 100vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: #0d0b18;
-  font-family: 'EB Garamond', Georgia, serif;
+const SAVE_KEY = 'hogwarts_rpg_v4';
+const _SECRET  = 'hgwts_s3cr3t_k3y_v4';
+
+function gerarHash(d) {
+  const campos = [
+    d.nivel, d.ouro, d.hp, d.hpMax, d.mp, d.mpMax,
+    d.xp, d.bonusDmg, d.casa,
+    JSON.stringify(d.varinhasCompradas),
+    JSON.stringify(d.permanentesComprados),
+    JSON.stringify(d.magicsAprendidas),
+    _SECRET
+  ].join('|');
+
+  let hash = 0x811c9dc5;
+  for (let i = 0; i < campos.length; i++) {
+    hash ^= campos.charCodeAt(i);
+    hash  = (hash * 0x01000193) >>> 0;
+  }
+  return hash.toString(16);
 }
 
-/* ══════════════════════════════════════════
-   CONTAINER PRINCIPAL
-══════════════════════════════════════════ */
-#happ {
-  width: 100%;
-  max-width: 600px;
-  min-height: 560px;
-  padding: 2rem 1.8rem 1.5rem;
-  position: relative;
-  border-radius: 12px;
-  overflow: hidden;
-  transition: background 0.8s, color 0.6s;
+function validarHash(d) {
+  if (!d || !d._hash) return false;
+  return d._hash === gerarHash(d);
 }
 
-#happ::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  opacity: 0.03;
-  pointer-events: none;
-  background-image: repeating-linear-gradient(
-    45deg, currentColor 0, currentColor 1px, transparent 0, transparent 50%
-  );
-  background-size: 22px 22px;
+function sanitizarValores(d) {
+  const MAX_NIVEL = 99;
+  const MAX_OURO  = 99999999;
+  const MAX_HP    = 5000;
+  const MAX_MP    = 2000;
+  const MAX_DMG   = 300;
+
+  if (d.nivel < 1   || d.nivel > MAX_NIVEL) return false;
+  if (d.ouro  < 0   || d.ouro  > MAX_OURO)  return false;
+  if (d.hpMax < 100 || d.hpMax > MAX_HP)    return false;
+  if (d.mpMax < 60  || d.mpMax > MAX_MP)    return false;
+  if (d.bonusDmg < 0 || d.bonusDmg > MAX_DMG) return false;
+  if (d.xp < 0 || d.xp > d.xpNext)         return false;
+  if (d.hp < 0 || d.hp > d.hpMax)           return false;
+  if (d.mp < 0 || d.mp > d.mpMax)           return false;
+
+  const hpEsperado = 100 + (d.nivel - 1) * 20;
+  const mpEsperado = 60  + (d.nivel - 1) * 10;
+  if (d.hpMax > hpEsperado + 15) return false;
+  if (d.mpMax > mpEsperado + 10) return false;
+
+  let dmgEsperado = 0;
+  if (d.varinhasCompradas[1]) dmgEsperado += 10;
+  if (d.varinhasCompradas[2]) dmgEsperado += 25;
+  if (d.varinhasCompradas[3]) dmgEsperado += 50;
+  if (d.bonusDmg !== dmgEsperado) return false;
+
+  return true;
 }
 
-/* ══════════════════════════════════════════
-   TELAS
-══════════════════════════════════════════ */
-.screen { display: none; }
-.screen.active { display: block; animation: fadeIn 0.4s ease; }
-
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(8px); }
-  to   { opacity: 1; transform: translateY(0); }
+function saveGame() {
+  if (!G.casa) return;
+  try {
+    G.saveAt = Date.now();
+    const toSave = { ...G };
+    toSave._hash = gerarHash(toSave);
+    localStorage.setItem(SAVE_KEY, JSON.stringify(toSave));
+    const el = document.getElementById('save-ind');
+    const agora = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+    el.textContent = `💾 ${agora}`;
+    setTimeout(() => { el.textContent = ''; }, 2000);
+  } catch (e) {
+    console.error('Erro ao salvar:', e);
+  }
 }
 
-/* ══════════════════════════════════════════
-   TIPOGRAFIA
-══════════════════════════════════════════ */
-h1 {
-  font-family: 'Cinzel', serif; font-size: 26px; font-weight: 700;
-  text-align: center; letter-spacing: 3px; margin-bottom: .3rem;
-}
-h2 {
-  font-family: 'Cinzel', serif; font-size: 15px; font-weight: 400;
-  text-align: center; margin-bottom: 1.2rem; opacity: .75;
-}
-h3 {
-  font-family: 'Cinzel', serif; font-size: 12px; font-weight: 700;
-  letter-spacing: 1px; margin-bottom: .5rem; opacity: .6; text-transform: uppercase;
-}
+function loadGame() {
+  try {
+    const raw = localStorage.getItem(SAVE_KEY);
+    if (!raw) return false;
+    const saved = JSON.parse(raw);
 
-.crest { font-size: 56px; text-align: center; display: block; margin: .6rem 0; }
+    if (!validarHash(saved)) {
+      console.warn('[SAVE] Hash inválido.');
+      localStorage.removeItem(SAVE_KEY);
+      return 'tamper';
+    }
 
-.subtitle {
-  text-align: center; font-size: 15px; font-style: italic;
-  margin-bottom: 1.5rem; opacity: .7; line-height: 1.7;
-}
+    if (!sanitizarValores(saved)) {
+      console.warn('[SAVE] Valores inconsistentes.');
+      localStorage.removeItem(SAVE_KEY);
+      return 'tamper';
+    }
 
-/* ══════════════════════════════════════════
-   BOTÕES
-══════════════════════════════════════════ */
-.btn {
-  display: inline-block; padding: 9px 22px;
-  font-family: 'Cinzel', serif; font-size: 12px; letter-spacing: 1px;
-  border: 1.5px solid rgba(255,255,255,.35); background: rgba(255,255,255,.06);
-  cursor: pointer; border-radius: 5px; transition: background .2s, transform .1s;
-  color: inherit;
-}
-.btn:hover:not(:disabled)  { background: rgba(255,255,255,.16); transform: translateY(-1px); }
-.btn:active:not(:disabled) { transform: translateY(0); }
-.btn:disabled { opacity: .35; cursor: not-allowed; }
-.btn-center { display: block; margin: .5rem auto; }
-.btn-full {
-  display: block; width: 100%; margin-bottom: 9px;
-  text-align: left; padding: 11px 16px; font-size: 14px;
+    G = { ...estadoInicial(), ...saved };
+
+    // Restaurar descanso ativo se ainda não expirou
+    if (G.descansoExpiry && G.descansoExpiry > Date.now()) {
+      startRestCountdown();
+    } else if (G.descansoExpiry && G.descansoExpiry <= Date.now() && G.descansoExpiry > 0) {
+      // Descanso completou enquanto estava fora
+      G.mp = Math.min(G.mpMax, (G.mp || 0) + 10);
+      G.descansoExpiry = 0;
+    }
+
+    return true;
+  } catch (e) {
+    console.error('[SAVE] Erro:', e);
+    return false;
+  }
 }
 
-/* ══════════════════════════════════════════
-   HUB DE BOTÕES DO MAPA
-══════════════════════════════════════════ */
-.hub-btns {
-  display: flex; flex-wrap: wrap; gap: 6px;
-  justify-content: center; margin-top: .6rem;
+function deleteSave() {
+  try { localStorage.removeItem(SAVE_KEY); } catch (e) {}
 }
-.hub-btn { padding: 7px 14px; font-size: 11px; }
-
-/* ══════════════════════════════════════════
-   BARRA DE PROGRESSO DO QUIZ
-══════════════════════════════════════════ */
-.progress-bar { display: flex; justify-content: center; gap: 8px; margin-bottom: 1.3rem; }
-.dot { width: 10px; height: 10px; border-radius: 50%; border: 1.5px solid currentColor; opacity: .3; transition: all .3s; }
-.dot.done { opacity: 1; background: currentColor; }
-.qbox { border: 1px solid rgba(255,255,255,.15); border-radius: 8px; padding: 1.4rem; background: rgba(255,255,255,.05); margin-bottom: 1rem; }
-.qtext { font-size: 17px; font-style: italic; line-height: 1.75; text-align: center; margin-bottom: 1.1rem; }
-
-/* ══════════════════════════════════════════
-   PASSIVA DA CASA (resultado)
-══════════════════════════════════════════ */
-.passiva-box {
-  display: flex; align-items: center; gap: .7rem;
-  border: 1px solid rgba(255,255,255,.15); border-radius: 8px;
-  padding: .7rem 1rem; background: rgba(255,255,255,.06);
-  margin: .8rem 0 1rem;
-}
-.passiva-loja-info {
-  background: rgba(100,180,255,.08); border: 1px solid rgba(100,180,255,.2);
-  border-radius: 6px; padding: .5rem .8rem; font-size: 12px;
-  margin-bottom: .8rem; text-align: center;
-}
-
-/* ══════════════════════════════════════════
-   STATUS BAR
-══════════════════════════════════════════ */
-.status-bar { display: flex; gap: 5px; margin-bottom: 1rem; flex-wrap: wrap; }
-.stat-box { flex: 1; min-width: 58px; border: 1px solid rgba(255,255,255,.15); border-radius: 6px; padding: 5px 7px; background: rgba(255,255,255,.06); text-align: center; }
-.stat-label { font-family: 'Cinzel', serif; font-size: 9px; letter-spacing: 1px; opacity: .55; }
-.stat-val { font-size: 13px; font-weight: 600; font-family: 'Cinzel', serif; }
-.bar-wrap { height: 5px; background: rgba(255,255,255,.12); border-radius: 4px; margin-top: 3px; overflow: hidden; }
-.bar-fill { height: 100%; border-radius: 4px; transition: width .4s; }
-.bar-hp  { background: #e74c3c; }
-.bar-mp  { background: #3498db; }
-.bar-xp  { background: #f39c12; }
-
-/* ══════════════════════════════════════════
-   MAPA
-══════════════════════════════════════════ */
-.map-scroll { max-height: 300px; overflow-y: auto; padding-right: 4px; margin-bottom: .5rem; }
-.map-scroll::-webkit-scrollbar { width: 4px; }
-.map-scroll::-webkit-scrollbar-thumb { background: rgba(255,255,255,.2); border-radius: 4px; }
-.map-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; }
-
-.zone-btn {
-  padding: 11px 7px; border: 1px solid rgba(255,255,255,.2); border-radius: 8px;
-  background: rgba(255,255,255,.05); cursor: pointer; text-align: center;
-  transition: background .2s, transform .15s; color: inherit; width: 100%;
-}
-.zone-btn:hover:not(:disabled) { background: rgba(255,255,255,.14); transform: translateY(-2px); }
-.zone-btn:disabled { opacity: .35; cursor: not-allowed; }
-.zone-btn.zone-boss { border-color: rgba(255,160,0,.35); background: rgba(255,100,0,.06); }
-.zone-icon  { font-size: 26px; display: block; margin-bottom: 3px; }
-.zone-name  { font-family: 'Cinzel', serif; font-size: 11px; letter-spacing: 1px; }
-.zone-desc  { font-size: 10px; opacity: .6; font-style: italic; margin-top: 2px; }
-.zone-lock  { font-size: 10px; margin-top: 3px; opacity: .45; }
-.zone-tag   { font-size: 10px; opacity: .5; font-style: italic; margin-top: 2px; }
-.boss-tag   { font-size: 10px; color: #ffa040; margin-top: 2px; font-family: 'Cinzel', serif; letter-spacing: .5px; }
-
-/* ══════════════════════════════════════════
-   COMBATE
-══════════════════════════════════════════ */
-.enemy-box { border: 1px solid rgba(255,100,100,.3); border-radius: 8px; padding: 1rem; background: rgba(255,0,0,.05); margin-bottom: .8rem; text-align: center; }
-.enemy-art  { font-size: 48px; margin: .3rem 0; }
-.enemy-name { font-family: 'Cinzel', serif; font-size: 16px; letter-spacing: 1px; margin-bottom: .3rem; }
-.status-icon { font-size: 10px; opacity: .8; margin: 0 3px; }
-
-.spells-scroll { max-height: 190px; overflow-y: auto; padding-right: 2px; margin-bottom: .8rem; }
-.spells-scroll::-webkit-scrollbar { width: 3px; }
-.spells-scroll::-webkit-scrollbar-thumb { background: rgba(255,255,255,.2); border-radius: 3px; }
-.spells-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; }
-
-.spell-btn {
-  padding: 9px 7px; border: 1px solid rgba(255,255,255,.2); border-radius: 6px;
-  background: rgba(255,255,255,.05); cursor: pointer; color: inherit;
-  font-family: 'EB Garamond', serif; font-size: 12px; transition: background .2s; text-align: center;
-}
-.spell-btn:hover:not(:disabled) { background: rgba(255,255,255,.14); }
-.spell-btn:disabled { opacity: .35; cursor: not-allowed; }
-.spell-name { font-family: 'Cinzel', serif; font-size: 11px; letter-spacing: .5px; }
-.spell-cost { font-size: 10px; opacity: .6; }
-.spell-learned { border-color: rgba(255,215,0,.4); background: rgba(255,215,0,.07); }
-.spell-basico  { border-color: rgba(255,255,255,.12); opacity: .7; }
-
-.log-box { border: 1px solid rgba(255,255,255,.1); border-radius: 6px; padding: .7rem; background: rgba(0,0,0,.25); min-height: 70px; max-height: 90px; overflow-y: auto; font-size: 13px; line-height: 1.7; margin-bottom: .8rem; }
-.log-good    { color: #7dff9a; }
-.log-bad     { color: #ff7d7d; }
-.log-info    { color: #ffd07d; }
-.log-warn    { color: #ffb347; }
-.log-neutral { opacity: .8; }
-
-/* ══════════════════════════════════════════
-   INVENTÁRIO
-══════════════════════════════════════════ */
-.inv-grid { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 1rem; }
-.item-card { border: 1px solid rgba(255,255,255,.2); border-radius: 6px; padding: 8px 12px; background: rgba(255,255,255,.06); cursor: pointer; font-size: 12px; transition: background .2s, transform .15s; color: inherit; }
-.item-card:hover { background: rgba(255,255,255,.15); transform: translateY(-1px); }
-
-/* ══════════════════════════════════════════
-   LOJA
-══════════════════════════════════════════ */
-.shop-section { margin-bottom: 1.2rem; }
-.shop-row { display: flex; align-items: center; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,.08); gap: 8px; }
-.shop-row-info { flex: 1; font-size: 13px; line-height: 1.5; }
-.badge { display: inline-block; padding: 2px 7px; border-radius: 10px; font-size: 9px; font-family: 'Cinzel', serif; background: rgba(255,220,100,.15); border: 1px solid rgba(255,220,100,.3); color: #ffd07d; margin-left: 4px; }
-.badge-lock    { background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.15); color: inherit; opacity: .5; }
-.badge-learned { background: rgba(100,255,150,.1); border: 1px solid rgba(100,255,150,.3); color: #7dff9a; }
-
-/* ══════════════════════════════════════════
-   DESCANSO
-══════════════════════════════════════════ */
-.rest-box { border: 1px solid rgba(100,180,255,.2); border-radius: 10px; padding: 1.2rem; background: rgba(50,100,200,.06); }
-.rest-timer { text-align: center; font-family: 'Cinzel', serif; font-size: 14px; padding: .8rem; border: 1px solid rgba(255,215,0,.2); border-radius: 8px; background: rgba(255,215,0,.05); color: #ffd07d; }
-
-/* ══════════════════════════════════════════
-   MISSÕES
-══════════════════════════════════════════ */
-.missao-card {
-  border: 1px solid rgba(255,255,255,.12); border-radius: 8px;
-  padding: .8rem; background: rgba(255,255,255,.04); margin-bottom: .6rem;
-}
-.missao-completa { border-color: rgba(100,255,150,.25); background: rgba(100,255,150,.05); }
-
-/* ══════════════════════════════════════════
-   CONQUISTAS
-══════════════════════════════════════════ */
-.conquista-card {
-  display: flex; align-items: center; gap: .8rem;
-  border: 1px solid rgba(255,255,255,.12); border-radius: 8px;
-  padding: .7rem; background: rgba(255,255,255,.04); margin-bottom: .5rem;
-}
-.conquista-ok   { border-color: rgba(255,215,0,.3); background: rgba(255,215,0,.06); }
-.conquista-bloq { opacity: .4; }
-
-/* ══════════════════════════════════════════
-   ESTATÍSTICAS
-══════════════════════════════════════════ */
-.stats-grid {
-  display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: .8rem;
-}
-.stat-item {
-  border: 1px solid rgba(255,255,255,.1); border-radius: 7px;
-  padding: .7rem .5rem; background: rgba(255,255,255,.04); text-align: center;
-}
-.stat-item-val   { font-family: 'Cinzel', serif; font-size: 18px; font-weight: 700; }
-.stat-item-label { font-size: 10px; opacity: .5; margin-top: 2px; font-family: 'Cinzel', serif; letter-spacing: .5px; }
-
-/* ══════════════════════════════════════════
-   MODAL
-══════════════════════════════════════════ */
-#modal-evento {
-  position: fixed; inset: 0; z-index: 9000;
-  display: flex; align-items: center; justify-content: center;
-}
-.modal-overlay {
-  position: absolute; inset: 0; background: rgba(0,0,0,.7);
-  backdrop-filter: blur(4px);
-}
-.modal-box {
-  position: relative; z-index: 9001;
-  background: #1a1530; border: 1px solid rgba(255,255,255,.2);
-  border-radius: 12px; padding: 2rem 1.5rem; max-width: 380px; width: 90%;
-  text-align: center; animation: modalIn .3s ease;
-}
-.modal-titulo { font-family: 'Cinzel', serif; font-size: 16px; letter-spacing: 1px; margin-bottom: .8rem; }
-.modal-msg    { font-size: 15px; font-style: italic; line-height: 1.7; opacity: .85; margin-bottom: 1.2rem; }
-
-@keyframes modalIn {
-  from { transform: scale(.85); opacity: 0; }
-  to   { transform: scale(1);   opacity: 1; }
-}
-
-/* ══════════════════════════════════════════
-   RESULTADO DA CASA
-══════════════════════════════════════════ */
-.result-house { font-family: 'Cinzel', serif; font-size: 30px; font-weight: 700; text-align: center; letter-spacing: 3px; }
-.result-motto { text-align: center; font-style: italic; font-size: 14px; opacity: .7; margin-bottom: 1rem; }
-.result-desc  { font-size: 15px; line-height: 1.8; text-align: center; max-width: 460px; margin: 0 auto 1.2rem; padding: .7rem; border-left: 3px solid rgba(255,255,255,.25); border-right: 3px solid rgba(255,255,255,.25); }
-.traits { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; margin-bottom: 1.2rem; }
-.trait { padding: 3px 12px; border-radius: 20px; font-size: 11px; border: 1px solid rgba(255,255,255,.25); background: rgba(255,255,255,.08); font-family: 'Cinzel', serif; letter-spacing: .5px; }
-
-/* ══════════════════════════════════════════
-   BANNERS
-══════════════════════════════════════════ */
-.level-banner { background: rgba(255,215,0,.12); border: 1px solid rgba(255,215,0,.3); border-radius: 8px; padding: 1rem; text-align: center; margin-bottom: 1rem; font-family: 'Cinzel', serif; }
-.tamper-alert { background: rgba(255,50,50,.15); border: 1px solid rgba(255,50,50,.4); border-radius: 8px; padding: 1rem; text-align: center; margin-bottom: 1rem; font-family: 'Cinzel', serif; color: #ff9a9a; }
-
-/* ══════════════════════════════════════════
-   TEMAS DAS CASAS
-══════════════════════════════════════════ */
-.th-g { background: #2a0a0a; color: #f5d78e; }
-.th-s { background: #061a10; color: #b8dfc0; }
-.th-r { background: #080f2a; color: #bdd0f0; }
-.th-h { background: #1a1200; color: #ffe99a; }
-.th-d { background: #12101e; color: #e0d5c5; }
-
-/* ══════════════════════════════════════════
-   NOTIFICAÇÃO & INDICADOR DE SAVE
-══════════════════════════════════════════ */
-#notif-box {
-  position: fixed; top: 18px; left: 50%; transform: translateX(-50%);
-  padding: 8px 18px; border-radius: 20px; font-size: 13px;
-  font-family: 'Cinzel', serif; letter-spacing: .5px; z-index: 9999;
-  background: rgba(255,220,100,.2); border: 1px solid rgba(255,220,100,.4);
-  color: #ffe99a; display: none; text-align: center;
-  animation: slideDown .3s ease; white-space: nowrap;
-}
-
-@keyframes slideDown {
-  from { transform: translateX(-50%) translateY(-20px); opacity: 0; }
-  to   { transform: translateX(-50%) translateY(0);     opacity: 1; }
-}
-
-.save-ind { position: absolute; top: 12px; left: 12px; font-size: 10px; font-family: 'Cinzel', serif; opacity: .4; letter-spacing: 1px; }
