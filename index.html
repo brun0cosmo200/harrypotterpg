@@ -1,19 +1,16 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Hogwarts RPG</title>
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=EB+Garamond:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet"/>
-  <!-- Supabase SDK -->
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <link rel="stylesheet" href="style.css"/>
 </head>
 <body>
-
 <div id="notif-box"></div>
 
-<!-- MODAL DE EVENTOS / NARRATIVA / BOSS -->
+<!-- MODAL UNIVERSAL -->
 <div id="modal-evento" style="display:none">
   <div class="modal-overlay" onclick="fecharModal()"></div>
   <div class="modal-box">
@@ -25,37 +22,17 @@
 
 <div id="happ" class="th-d">
   <div class="save-ind" id="save-ind"></div>
-
-  <!-- Indicador de XP boost ativo -->
-  <div id="xp-boost-timer" style="display:none;position:absolute;top:12px;right:48px;font-size:10px;font-family:'Cinzel',serif;background:rgba(255,200,0,.15);border:1px solid rgba(255,200,0,.3);padding:3px 8px;border-radius:12px;color:#ffd07d"></div>
-
-  <!-- Badge Top 1 (visível em todas as telas quando ativo) -->
-  <div id="top1-badge" style="display:none;position:absolute;top:10px;left:50%;transform:translateX(-50%);z-index:100">
-    <div class="top1-badge-inner">⚜️ LORDE DAS SOMBRAS</div>
-  </div>
-
-  <button id="btn-som" onclick="toggleSom()" style="position:absolute;top:10px;right:12px;background:none;border:none;font-size:16px;cursor:pointer;opacity:.5;z-index:50">🔊</button>
+  <div id="xp-boost-timer"></div>
+  <button id="btn-som" onclick="toggleSom()">🔊</button>
 
   <!-- ══ INTRO ══ -->
   <div id="s-intro" class="screen active">
     <h1>HOGWARTS</h1>
     <h2>Escola de Magia e Bruxaria</h2>
     <span class="crest">🏰</span>
-    <p class="subtitle">
-      Bem-vindo, jovem bruxo.<br>
-      O Chapéu Seletor revelará sua casa.<br>
-      Após isso, sua aventura começa.
-    </p>
+    <p class="subtitle">Bem-vindo, jovem bruxo.<br>O Chapéu Seletor revelará sua casa.</p>
     <div id="continue-section"></div>
     <button class="btn btn-center" id="start-btn" onclick="startQuiz()">Colocar o Chapéu</button>
-    <div style="text-align:center;margin-top:.8rem">
-      <button class="btn" style="font-size:11px;opacity:.7" onclick="go('s-ranking');renderRanking()">🌍 Ver Ranking Global</button>
-    </div>
-
-    <!-- Painel de autenticação na intro -->
-    <div style="margin-top:1rem">
-      <div id="auth-panel"></div>
-    </div>
   </div>
 
   <!-- ══ QUIZ ══ -->
@@ -64,41 +41,72 @@
     <div class="qbox" id="qcontainer"></div>
   </div>
 
+  <!-- ══ PERSONALIZAÇÃO ══ -->
+  <div id="s-personagem" class="screen">
+    <h2>✨ Seu Personagem</h2>
+    <div id="personagem-html"></div>
+  </div>
+
   <!-- ══ RESULTADO DA CASA ══ -->
   <div id="s-result" class="screen">
     <div id="result-html"></div>
   </div>
 
-  <!-- ══ MAPA / HUB ══ -->
+  <!-- ══ MAPA ══ -->
   <div id="s-map" class="screen">
     <div class="status-bar" id="status-top"></div>
-    <h3 style="text-align:center;margin-bottom:.6rem">— Onde você vai? —</h3>
+    <div id="titulo-jogador" style="text-align:center;font-size:13px;opacity:.7;margin-bottom:.5rem"></div>
     <div class="map-scroll">
       <div class="map-grid" id="map-zones"></div>
     </div>
     <div class="hub-btns">
-      <button class="btn hub-btn" onclick="go('s-inv'); renderInv()">🎒 Inventário</button>
-      <button class="btn hub-btn" onclick="go('s-shop'); renderShop()">🏪 Loja</button>
-      <button class="btn hub-btn" onclick="go('s-magic'); renderMagicShop()">📖 Magia</button>
-      <button class="btn hub-btn" onclick="go('s-rest'); renderRestShop()">🛏️ Descanso</button>
-      <button class="btn hub-btn" onclick="go('s-missoes'); renderMissoes()">📋 Missões</button>
-      <button class="btn hub-btn" onclick="go('s-conquistas'); renderConquistas()">🏆 Troféus</button>
-      <button class="btn hub-btn" onclick="go('s-stats'); renderStats()">📊 Stats</button>
-      <button class="btn hub-btn" onclick="go('s-ranking'); renderRanking()">🌍 Ranking</button>
+      <button class="btn hub-btn" onclick="go('s-inv');renderInv()">🎒 Inventário</button>
+      <button class="btn hub-btn" onclick="go('s-shop');renderShop()">🏪 Loja</button>
+      <button class="btn hub-btn" onclick="go('s-magic');renderMagicShop()">📖 Magia</button>
+      <button class="btn hub-btn" onclick="go('s-rest');renderRestShop()">🛏️ Descanso</button>
+      <button class="btn hub-btn" onclick="go('s-arvore-view');renderArvoreView()">🌳 Habilidades</button>
+      <button class="btn hub-btn" onclick="go('s-missoes');renderMissoes()">📋 Missões</button>
+      <button class="btn hub-btn" onclick="go('s-conquistas');renderConquistas()">🏆 Troféus</button>
+      <button class="btn hub-btn" onclick="go('s-diario');renderDiario()">📓 Diário</button>
+      <button class="btn hub-btn" onclick="go('s-stats');renderStats()">📊 Stats</button>
     </div>
+  </div>
+
+  <!-- ══ ESCOLHA DA MASMORRA ══ -->
+  <div id="s-escolha" class="screen">
+    <h2 id="escolha-titulo"></h2>
+    <div id="escolha-content"></div>
+  </div>
+
+  <!-- ══ ÁRVORE DE HABILIDADES (escolha) ══ -->
+  <div id="s-arvore" class="screen">
+    <h2 id="arvore-titulo">Escolha sua Habilidade</h2>
+    <p style="text-align:center;font-size:13px;opacity:.6;font-style:italic;margin-bottom:1rem">
+      Você ganhou um ponto de habilidade. Escolha sabiamente — a escolha é permanente.
+    </p>
+    <div id="arvore-opcoes" class="arvore-grid"></div>
+  </div>
+
+  <!-- ══ ÁRVORE DE HABILIDADES (visualização) ══ -->
+  <div id="s-arvore-view" class="screen">
+    <h2>🌳 Árvore de Habilidades</h2>
+    <div id="arvore-view-content" style="max-height:400px;overflow-y:auto;padding-right:4px"></div>
+    <br>
+    <button class="btn btn-center" onclick="go('s-map');renderMap()">← Voltar</button>
   </div>
 
   <!-- ══ COMBATE ══ -->
   <div id="s-battle" class="screen">
     <div class="status-bar" id="status-battle"></div>
     <div class="enemy-box" id="enemy-box"></div>
+    <div id="battle-buffs" style="text-align:center;min-height:20px;margin-bottom:.3rem"></div>
     <div class="log-box" id="log"></div>
     <div class="spells-scroll">
       <div class="spells-grid" id="spells"></div>
     </div>
     <div style="display:flex;gap:8px;justify-content:center">
       <button class="btn" onclick="tryFlee()">🏃 Fugir</button>
-      <button class="btn" onclick="go('s-inv'); renderInv()">🎒 Itens</button>
+      <button class="btn" onclick="go('s-inv');renderInv()">🎒 Itens</button>
     </div>
   </div>
 
@@ -111,13 +119,13 @@
     <button class="btn btn-center" onclick="voltarDoBolso()">← Voltar</button>
   </div>
 
-  <!-- ══ LOJA PRINCIPAL ══ -->
+  <!-- ══ LOJA ══ -->
   <div id="s-shop" class="screen">
     <h2>🏪 Loja do Ollivander</h2>
     <div class="status-bar" id="status-shop"></div>
     <div id="shop-items"></div>
     <br>
-    <button class="btn btn-center" onclick="go('s-map'); renderMap()">← Voltar</button>
+    <button class="btn btn-center" onclick="go('s-map');renderMap()">← Voltar</button>
   </div>
 
   <!-- ══ LOJA DE MAGIA ══ -->
@@ -126,7 +134,7 @@
     <div class="status-bar" id="status-magic"></div>
     <div id="magic-items"></div>
     <br>
-    <button class="btn btn-center" onclick="go('s-map'); renderMap()">← Voltar</button>
+    <button class="btn btn-center" onclick="go('s-map');renderMap()">← Voltar</button>
   </div>
 
   <!-- ══ DESCANSO ══ -->
@@ -135,23 +143,31 @@
     <div class="status-bar" id="status-rest"></div>
     <div id="rest-content"></div>
     <br>
-    <button class="btn btn-center" onclick="go('s-map'); renderMap()">← Voltar</button>
+    <button class="btn btn-center" onclick="go('s-map');renderMap()">← Voltar</button>
   </div>
 
   <!-- ══ MISSÕES ══ -->
   <div id="s-missoes" class="screen">
     <h2>📋 Missões</h2>
-    <div id="missoes-lista" style="max-height:380px;overflow-y:auto;padding-right:4px"></div>
+    <div id="missoes-lista" style="max-height:400px;overflow-y:auto;padding-right:4px"></div>
     <br>
-    <button class="btn btn-center" onclick="go('s-map'); renderMap()">← Voltar</button>
+    <button class="btn btn-center" onclick="go('s-map');renderMap()">← Voltar</button>
   </div>
 
   <!-- ══ CONQUISTAS ══ -->
   <div id="s-conquistas" class="screen">
     <h2>🏆 Conquistas</h2>
-    <div id="conquistas-lista" style="max-height:380px;overflow-y:auto;padding-right:4px"></div>
+    <div id="conquistas-lista" style="max-height:400px;overflow-y:auto;padding-right:4px"></div>
     <br>
-    <button class="btn btn-center" onclick="go('s-map'); renderMap()">← Voltar</button>
+    <button class="btn btn-center" onclick="go('s-map');renderMap()">← Voltar</button>
+  </div>
+
+  <!-- ══ DIÁRIO ══ -->
+  <div id="s-diario" class="screen">
+    <h2>📓 Diário de Hogwarts</h2>
+    <div id="diario-lista" style="max-height:400px;overflow-y:auto;padding-right:4px"></div>
+    <br>
+    <button class="btn btn-center" onclick="go('s-map');renderMap()">← Voltar</button>
   </div>
 
   <!-- ══ ESTATÍSTICAS ══ -->
@@ -159,44 +175,16 @@
     <h2>📊 Estatísticas</h2>
     <div id="stats-content"></div>
     <br>
-    <button class="btn btn-center" onclick="go('s-map'); renderMap()">← Voltar</button>
-  </div>
-
-  <!-- ══ RANKING GLOBAL ══ -->
-  <div id="s-ranking" class="screen">
-    <h2>🌍 Ranking Global</h2>
-
-    <!-- Auth integrado na tela de ranking -->
-    <div id="auth-panel-ranking" style="margin-bottom:1rem"></div>
-
-    <div style="font-size:11px;opacity:.5;text-align:center;margin-bottom:.8rem">
-      Apenas jogadores nível 20+ aparecem no ranking
-    </div>
-
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.5rem">
-      <div style="font-family:'Cinzel',serif;font-size:10px;opacity:.4;letter-spacing:1px">
-        ⚔️ KILLS &nbsp; 👑 BOSSES &nbsp; 💥 MAIOR DANO
-      </div>
-      <button class="btn" style="font-size:10px;padding:4px 10px" onclick="renderRanking()">🔄</button>
-    </div>
-
-    <div id="ranking-loading" style="display:none;text-align:center;opacity:.5;padding:1rem;font-style:italic">
-      Carregando ranking...
-    </div>
-    <div id="ranking-lista" style="max-height:340px;overflow-y:auto;padding-right:4px"></div>
-    <div id="ranking-minha-pos" style="text-align:center;font-size:11px;opacity:.5;margin-top:.5rem;font-style:italic"></div>
-
-    <br>
-    <button class="btn btn-center" onclick="voltarDoRanking()">← Voltar</button>
+    <button class="btn btn-center" onclick="go('s-map');renderMap()">← Voltar</button>
   </div>
 
   <!-- ══ GAME OVER ══ -->
   <div id="s-gameover" class="screen">
     <span class="crest">💀</span>
-    <h1>FIM DA JORNADA</h1>
+    <h1>DERROTADO</h1>
     <p class="subtitle" id="go-msg"></p>
     <button class="btn btn-center" onclick="restartRpg()">Tentar Novamente</button>
-    <button class="btn btn-center" onclick="go('s-intro'); resetAll()" style="opacity:.6;font-size:11px">Refazer o Teste</button>
+    <button class="btn btn-center" onclick="go('s-intro');resetAll()" style="opacity:.6;font-size:11px">Novo Jogo</button>
   </div>
 
   <!-- ══ VITÓRIA ══ -->
@@ -206,28 +194,36 @@
     <p class="subtitle" id="win-msg"></p>
     <div class="status-bar" id="status-win"></div>
     <div id="level-up-banner"></div>
-    <button class="btn btn-center" onclick="go('s-map'); renderMap()">Continuar Aventura</button>
-    <button class="btn btn-center" onclick="go('s-intro'); resetAll()" style="opacity:.5;font-size:11px">Novo Jogo</button>
+    <div id="win-extra"></div>
   </div>
 
-</div><!-- #happ -->
+</div>
 
 <script src="data.js"></script>
 <script src="save.js"></script>
-<script src="online.js"></script>
 <script src="game.js"></script>
 <script>
-  // Sincroniza painel de auth na tela de ranking também
-  const _origRenderAuthUI = renderAuthUI;
-  function renderAuthUI() {
-    _origRenderAuthUI();
-    const panel2 = document.getElementById('auth-panel-ranking');
-    if (panel2) panel2.innerHTML = document.getElementById('auth-panel')?.innerHTML || '';
-  }
-
-  window.addEventListener('DOMContentLoaded', () => {
-    initOnline();
-  });
+// Visualização da árvore de habilidades
+function renderArvoreView() {
+  const tiers = Object.entries(ARVORE_HABILIDADES).sort((a,b)=>parseInt(a[0])-parseInt(b[0]));
+  document.getElementById('arvore-view-content').innerHTML = tiers.map(([nivel, opcoes]) => {
+    return `<div style="margin-bottom:1rem">
+      <div style="font-family:'Cinzel',serif;font-size:11px;opacity:.5;margin-bottom:.4rem">NÍVEL ${nivel}</div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap">
+        ${opcoes.map(h => {
+          const aprendida = (G.habilidadesAprendidas||[]).includes(h.id);
+          const disponivel = G.nivel >= parseInt(nivel);
+          return `<div class="hab-view-card ${aprendida?'hab-aprendida':disponivel?'hab-disponivel':'hab-bloqueada'}">
+            <span style="font-size:20px">${h.icon}</span>
+            <div style="font-size:11px;font-family:'Cinzel',serif">${h.nome}</div>
+            <div style="font-size:10px;opacity:.6">${h.desc}</div>
+            ${aprendida?'<div style="font-size:10px;color:#7dff9a;margin-top:3px">✓ Aprendida</div>':''}
+          </div>`;
+        }).join('')}
+      </div>
+    </div>`;
+  }).join('');
+}
 </script>
 </body>
 </html>
