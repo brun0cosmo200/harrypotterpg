@@ -61,6 +61,17 @@ const CORES_VARINHA = [
   { id: "ébano",    hex: "#8B4513", nome: "Ébano"    },
 ];
 
+const CLAS = [
+  { id: "thorne", nome: "Thorne", raridade: "Comum", peso: 34, icon: "🛡️", cor: "#9aa4b2", bonus: { hp: 10 }, desc: "+10 HP máximo. Clã sólido e resistente." },
+  { id: "reed", nome: "Reed", raridade: "Comum", peso: 28, icon: "📘", cor: "#7faeea", bonus: { mp: 8 }, desc: "+8 MP máximo. Ideal para quem curte soltar magia cedo." },
+  { id: "blackwood", nome: "Blackwood", raridade: "Raro", peso: 16, icon: "🗡️", cor: "#7df0c8", bonus: { danoPct: 0.05 }, desc: "+5% de dano em todas as magias." },
+  { id: "rosier", nome: "Rosier", raridade: "Raro", peso: 11, icon: "🍀", cor: "#7de48b", bonus: { crit: 0.04 }, desc: "+4% de chance crítica. Build agressiva e consistente." },
+  { id: "gaunt", nome: "Gaunt", raridade: "Epico", peso: 6, icon: "🐍", cor: "#6fc66e", bonus: { dreno: 3 }, desc: "Feitiços drenam 3 HP adicionais do alvo." },
+  { id: "lestrange", nome: "Lestrange", raridade: "Epico", peso: 3.5, icon: "🔥", cor: "#ff8a5b", bonus: { danoPct: 0.08, hp: -10 }, desc: "+8% de dano, mas -10 HP máximo. Alto risco, alto impacto." },
+  { id: "malfoy", nome: "Malfoy", raridade: "Mitico", peso: 1.2, icon: "👑", cor: "#d6dcff", bonus: { desconto: 0.07, ouroPct: 0.1 }, desc: "-7% em lojas e +10% de ouro nas batalhas." },
+  { id: "potter", nome: "Potter", raridade: "Lendario", peso: 0.3, icon: "⚡", cor: "#ffd166", bonus: { hp: 18, mp: 12, danoPct: 0.08, crit: 0.05 }, desc: "Clã lendário. Pacote completo para virar protagonista mesmo." },
+];
+
 // ── CASAS ──
 const CASAS = {
   g: {
@@ -184,13 +195,17 @@ function getTitulo(nivel) {
 
 // ── MAGIAS LOJA ──
 const MAGIAS_LOJA = [
-  { id: "bombarda",    nome: "Bombarda",          icon: "💥", dano: [35, 55],  mp: 30, desc: "Explosão devastadora",                  preco:  10000, nivelMin: 3 },
-  { id: "confringo",   nome: "Confringo",         icon: "🌋", dano: [40, 60],  mp: 35, desc: "Feitiço de explosão",                    preco:  15000, nivelMin: 4 },
-  { id: "crucio",      nome: "Cruciatus",         icon: "⚡", dano: [45, 70],  mp: 40, desc: "Maldição da dor extrema",                preco:  25000, nivelMin: 5 },
-  { id: "fiendfyre",   nome: "Fiendfyre",         icon: "🔱", dano: [55, 80],  mp: 50, desc: "Chamas infernais incontroláveis",         preco:  30000, nivelMin: 6 },
-  { id: "prior",       nome: "Priori Incantatem", icon: "🌀", dano: [60, 90],  mp: 55, desc: "Eco de magias potencializado",            preco:  50000, nivelMin: 7 },
-  { id: "tempestade",  nome: "Tempestade Arcana", icon: "🌪️", dano: [70, 100], mp: 60, desc: "Vendaval de energia mágica pura",         preco:  60000, nivelMin: 8 },
-  { id: "morte_negra", nome: "Marca Negra",       icon: "🌑", dano: [80, 110], mp: 70, desc: "O sinal do Lorde das Trevas como arma",   preco:  80000, nivelMin: 9 },
+  { id: "bombarda",    nome: "Bombarda",          icon: "💥", dano: [35, 55],  mp: 30, desc: "Explosão devastadora",                  preco:  1000, nivelMin: 3 },
+  { id: "confringo",   nome: "Confringo",         icon: "🌋", dano: [40, 60],  mp: 35, desc: "Feitiço de explosão",                    preco:  1500, nivelMin: 4 },
+  { id: "crucio",      nome: "Cruciatus",         icon: "⚡", dano: [45, 70],  mp: 40, desc: "Maldição da dor extrema",                preco:  2500, nivelMin: 5 },
+  { id: "fiendfyre",   nome: "Fiendfyre",         icon: "🔱", dano: [55, 80],  mp: 50, desc: "Chamas infernais incontroláveis",         preco:  3000, nivelMin: 6 },
+  { id: "prior",       nome: "Priori Incantatem", icon: "🌀", dano: [60, 90],  mp: 55, desc: "Eco de magias potencializado",            preco:  5000, nivelMin: 7 },
+  { id: "tempestade",  nome: "Tempestade Arcana", icon: "🌪️", dano: [70, 100], mp: 60, desc: "Vendaval de energia mágica pura",         preco:  6000, nivelMin: 8 },
+  { id: "morte_negra", nome: "Marca Negra",       icon: "🌑", dano: [80, 110], mp: 70, desc: "O sinal do Lorde das Trevas como arma",   preco:  8000, nivelMin: 9 },
+  { id: "glacius",     nome: "Glacius Maxima",    icon: "❄️", dano: [90, 125], mp: 72, desc: "Congela o campo com pressão arcana",       preco: 11000, nivelMin: 11 },
+  { id: "fulmen",      nome: "Fulmen Tempus",     icon: "🌩️", dano: [102, 138], mp: 78, desc: "Relâmpagos concentrados de alto impacto",  preco: 14500, nivelMin: 13 },
+  { id: "arcis",       nome: "Arcis Nova",        icon: "☄️", dano: [118, 160], mp: 86, desc: "Rasgão de energia pura e instável",        preco: 18500, nivelMin: 15 },
+  { id: "phoenix",     nome: "Chama da Fênix",    icon: "🕊️", dano: [135, 182], mp: 95, desc: "Explosão lendária com assinatura heroica", preco: 24000, nivelMin: 18 },
 ];
 
 // ── ZONAS / MASMORRAS ──
@@ -342,11 +357,12 @@ const DIARIO_EVENTOS = {
 
 // ── LOJA ITENS ──
 const LOJA_ITENS = [
-  { id: "potion",        nome: "Poção de Cura",          icon: "🧪", preco:   20, desc: "Restaura 40 HP",             tipo: "consumivel", nivelMin: 1 },
-  { id: "mana_pot",      nome: "Poção de Mana",           icon: "💧", preco:   28, desc: "Restaura 30 MP",             tipo: "consumivel", nivelMin: 1 },
+  { id: "potion",        nome: "Poção de Cura",          icon: "🧪", preco:   17, desc: "Restaura 40 HP",             tipo: "consumivel", nivelMin: 1 },
+  { id: "mana_pot",      nome: "Poção de Mana",           icon: "💧", preco:   27, desc: "Restaura 30 MP",             tipo: "consumivel", nivelMin: 1 },
   { id: "grande_potion", nome: "Poção Grande",             icon: "🫙", preco:   55, desc: "Restaura 80 HP",             tipo: "consumivel", nivelMin: 2 },
   { id: "elixir",        nome: "Elixir da Força",         icon: "⚗️", preco:  110, desc: "Restaura 60 HP e 40 MP",     tipo: "consumivel", nivelMin: 4 },
   { id: "potion_full",   nome: "Poção Mestra",             icon: "💎", preco:  250, desc: "HP e MP totalmente cheios",  tipo: "consumivel", nivelMin: 6 },
+  { id: "giro_cla",      nome: "Giro de Família",         icon: "🎰", preco: 1800, desc: "Ganha 1 giro extra na roleta de clã", tipo: "cla", nivelMin: 4 },
   { id: "xp_pot_p",      nome: "Essência de Experiência", icon: "🌿", preco:  150, desc: "XP +50% por 5 minutos",      tipo: "xppot", nivelMin: 3,  xpBoost: 1.5, xpDuracao: 300000 },
   { id: "xp_pot_m",      nome: "Elixir do Aprendizado",   icon: "🔆", preco:  400, desc: "XP +100% por 5 minutos",     tipo: "xppot", nivelMin: 8,  xpBoost: 2.0, xpDuracao: 300000 },
   { id: "xp_pot_g",      nome: "Pergaminho Ancestral",    icon: "📿", preco:  900, desc: "XP +200% por 5 minutos",     tipo: "xppot", nivelMin: 15, xpBoost: 3.0, xpDuracao: 300000 },
@@ -355,8 +371,8 @@ const LOJA_ITENS = [
   { id: "colar_crit",    nome: "Colar da Sorte",          icon: "🍀", preco:  200, desc: "Chance de crítico +10%",      tipo: "permanente", nivelMin: 5,  limite: 1 },
   { id: "anel_xp",       nome: "Anel do Estudioso",       icon: "💍", preco:  350, desc: "+15% XP permanente",          tipo: "permanente", nivelMin: 7,  limite: 1 },
   { id: "varinha1", nome: "Varinha Reforçada",    icon: "🪄", preco:     80, desc: "+10 dano permanente", tipo: "varinha", nivelMin: 1, varinhaLvl: 1, limite: 1 },
-  { id: "varinha2", nome: "Varinha Ancestral",    icon: "🔮", preco: 300000, desc: "+25 dano permanente", tipo: "varinha", nivelMin: 5, varinhaLvl: 2, limite: 1 },
-  { id: "varinha3", nome: "Varinha das Varinhas", icon: "🌟", preco: 500000, desc: "+50 dano permanente", tipo: "varinha", nivelMin: 8, varinhaLvl: 3, limite: 1 },
+  { id: "varinha2", nome: "Varinha Ancestral",    icon: "🔮", preco: 3000, desc: "+25 dano permanente", tipo: "varinha", nivelMin: 5, varinhaLvl: 2, limite: 1 },
+  { id: "varinha3", nome: "Varinha das Varinhas", icon: "🌟", preco: 9000, desc: "+50 dano permanente", tipo: "varinha", nivelMin: 8, varinhaLvl: 3, limite: 1 },
 ];
 
 // ── MISSÕES ──
@@ -387,6 +403,11 @@ const CONQUISTAS_DEF = [
   { id: "arvore_3",        nome: "Trilha do Poder",      desc: "Aprenda 3 habilidades da árvore",    icon: "🌳",  condicao: (s) => (s.habilidadesAprendidas||[]).length >= 3 },
   { id: "masmorra_perfeita",nome: "Sem Arranhões",       desc: "Complete uma masmorra sem perder HP", icon: "✨",  condicao: (s) => (s.masmorrasPerfeitas||0) >= 1 },
   { id: "diario_5",        nome: "Cronista",             desc: "Registre 5 entradas no diário",      icon: "📓",  condicao: (s) => (s.diario||[]).length >= 5 },
+  { id: "cla_lendario",    nome: "Sangue Lendário",      desc: "Desperte a família Potter",          icon: "⚡",  condicao: (s) => s.claId === 'potter' },
+  { id: "colecao_magias",  nome: "Biblioteca Viva",      desc: "Aprenda 10 magias da loja",          icon: "📚",  condicao: (s) => (s.magicsAprendidas||[]).length >= 10 },
+  { id: "rico_100k",       nome: "Cofre de Gringotes",   desc: "Acumule 100.000 de ouro",            icon: "🏦",  condicao: (s) => s.ouro >= 100000 },
+  { id: "boss_5",          nome: "Predador Supremo",     desc: "Derrote 5 bosses",                   icon: "👑",  condicao: (s) => (s.killsBoss||0) >= 5 },
+  { id: "streak_20",       nome: "Sem Misericórdia",     desc: "Alcance streak de 20 vitórias",      icon: "🔥",  condicao: (s) => (s.streakMax||0) >= 20 },
 ];
 
 // ── EVENTOS ALEATÓRIOS ──
