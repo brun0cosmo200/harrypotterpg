@@ -9,13 +9,14 @@ function estadoInicial() {
     // Identidade
     casa: null, qIdx: 0, votos: { g:0,s:0,r:0,h:0 },
     avatarId: "mago_m", varinhaId: "dourada", nomePersonagem: "",
+    claId: null, claRaridade: null, claHistorico: [], girosCla: 1,
     // Stats
     hp: 100, hpMax: 100, mp: 60, mpMax: 60,
-    nivel: 1, xp: 0, xpNext: 100, ouro: 30,
+    nivel: 1, xp: 0, xpNext: 100, ouro: 30, bonusDmg: 0,
     // Inventário
-    inv: [{ id:"potion", nome:"Poção de Cura", icon:"🧪", qtd:2, desc:"Restaura 40 HP" }],
-    // Combate
-    inimigo: null, inBattle: false, bonusDmg: 0, zonaAtual: null,
+   inv: [{ id:"potion", nome:"Poção de Cura", icon:"🧪", qtd:2, desc:"Restaura 40 HP" }],
+// Combate
+    inimigo: null,
     // Compras
     varinhasCompradas: {1:false,2:false,3:false},
     permanentesComprados: {},
@@ -70,7 +71,11 @@ function formatTempo(ms) {
   return h>0 ? `${h}h ${m}m` : `${m}m ${s%60}s`;
 }
 
-function getDesconto() { return G.casa==='r' ? 0.85 : 1.0; }
+function getDesconto() {
+  const bonusCla = getClaBonus();
+  const descontoBase = G.casa === 'r' ? 0.85 : 1.0;
+  return descontoBase * (1 - (bonusCla.desconto || 0));
+}
 
 function xpBoostAtivo() {
   if (G.xpBoostExpiry > Date.now()) return G.xpBoostMult;
@@ -91,13 +96,58 @@ function getAvatar() {
 function getVarinha() {
   return CORES_VARINHA.find(v => v.id === G.varinhaId) || CORES_VARINHA[0];
 }
+function getCla() {
+  return CLAS.find(c => c.id === G.claId) || null;
+}
+function getClaBonus() {
+  const cla = getCla();
+  return cla?.bonus || {};
+}
+function getClaPrice() {
+  const owned = (G.claHistorico || []).length;
+  return 1800 + owned * 900;
+}
+function getRaridadeClass(r) {
+  return String(r || '').toLowerCase()
+    .replace('á', 'a')
+    .replace('ã', 'a')
+    .replace('é', 'e')
+    .replace('í', 'i')
+    .replace('ó', 'o')
+    .replace('ú', 'u');
+}
+function sortearCla() {
+  const total = CLAS.reduce((acc, cla) => acc + cla.peso, 0);
+  let roll = Math.random() * total;
+  for (const cla of CLAS) {
+    roll -= cla.peso;
+    if (roll <= 0) return cla;
+  }
+  return CLAS[0];
+}
+function aplicarCla(cla) {
+  if (!cla) return;
+  const bonusAtual = getClaBonus();
+  const bonus = cla.bonus || {};
+  const hpAntes = G.hpMax;
+  const mpAntes = G.mpMax;
+  G.claId = cla.id;
+  G.claRaridade = cla.raridade;
+  G.claHistorico = [...new Set([...(G.claHistorico || []), cla.id])];
+  G.hpMax = Math.max(80, G.hpMax + (bonus.hp || 0) - (bonusAtual.hp || 0));
+  G.mpMax = Math.max(40, G.mpMax + (bonus.mp || 0) - (bonusAtual.mp || 0));
+  if (hpAntes > 0) G.hp = Math.min(G.hpMax, Math.max(1, G.hp + (G.hpMax - hpAntes)));
+  if (mpAntes > 0) G.mp = Math.min(G.mpMax, Math.max(0, G.mp + (G.mpMax - mpAntes)));
+  G.chanceCritico = Math.max(0.10, (G.chanceCritico || 0.10) - (bonusAtual.crit || 0) + (bonus.crit || 0));
+}
 
 // ── CALCULAR BÔNUS DAS HABILIDADES ──
 function getBonusHabilidades() {
   const h = G.habilidadesAprendidas || [];
   const tem = (id) => h.includes(id);
+  const cla = getClaBonus();
   return {
-    danoPct:      (tem('foco') ? 0.12 : 0) + (tem('devastacao') ? 0.30 : 0) + (tem('lendario') ? 0.08 : 0),
+    danoPct:      (tem('foco') ? 0.12 : 0) + (tem('devastacao') ? 0.30 : 0) + (tem('lendario') ? 0.08 : 0) + (cla.danoPct || 0),
     hpMaxBonus:   (tem('resistencia') ? 25 : 0) + (tem('lendario') ? 50 : 0) - (tem('devastacao') ? 15 : 0),
     mpMaxBonus:   (tem('lendario') ? 25 : 0) - (tem('troca_mp_hp') ? 15 : 0),
     mpRegenExtra: (tem('catalise') ? 3 : 0),
@@ -114,6 +164,8 @@ function getBonusHabilidades() {
     eterno:       tem('eterno'),
     arcano_puro:  tem('arcano_puro') ? 0.30 : 0,
     transcendencia:tem('transcendencia'),
+    drenoBonus: cla.dreno || 0,
+    ouroPct: cla.ouroPct || 0,
   };
 }
 
@@ -151,16 +203,12 @@ function tocarSom(tipo) {
 // ══════════════════════════════════════════
 window.addEventListener('DOMContentLoaded', () => {
   const result = loadGame();
-
-  if (result==='tamper') {
-    document.getElementById('continue-section').innerHTML=`<div class="tamper-alert">⚠️ Save corrompido detectado. Progresso resetado.</div>`;
-    return;
-  }
+  initAutoSave();
 
   if (result===true && G.casa) {
     const casa=CASAS[G.casa];
     document.getElementById('happ').className=casa.theme;
-    const av=getAvatar(), vr=getVarinha();
+    const av=getAvatar(), cla=getCla();
     const titulo=getTitulo();
     document.getElementById('continue-section').innerHTML=`
       <div class="continue-card">
@@ -169,6 +217,7 @@ window.addEventListener('DOMContentLoaded', () => {
           <div style="font-family:'Cinzel',serif;font-size:13px">${G.nomePersonagem||'Bruxo'} ${titulo.icon}</div>
           <div style="font-size:11px;opacity:.6">${titulo.titulo} · ${casa.nome}</div>
           <div style="font-size:11px;opacity:.5">Nível ${G.nivel} · ${formatOuro(G.ouro)} 🪙 · ${G.hp}/${G.hpMax} HP</div>
+          ${cla ? `<div style="font-size:10px;opacity:.65;color:${cla.cor}">${cla.icon} ${cla.nome} · ${cla.raridade}</div>` : ''}
         </div>
         <button class="btn" onclick="continueGame()">▶ Continuar</button>
       </div>`;
@@ -181,6 +230,12 @@ window.addEventListener('DOMContentLoaded', () => {
 
 function continueGame() {
   document.getElementById('happ').className=CASAS[G.casa].theme;
+  if (!G.claId) {
+    if (!G.girosCla || G.girosCla < 1) G.girosCla = 1;
+    go('s-cla');
+    renderClaRoleta(true);
+    return;
+  }
   go('s-map'); renderMap();
 }
 
@@ -329,11 +384,70 @@ function confirmarPersonagem() {
     if(inp && inp.value.trim()) G.nomePersonagem=inp.value.trim();
     else G.nomePersonagem='Bruxo';
   }
-  go('s-result'); renderResultado();
+  if (!G.girosCla || G.girosCla < 1) G.girosCla = 1;
+  go('s-cla'); renderClaRoleta(true);
+}
+
+function renderClaRoleta(primeiraVez = false) {
+  const atual = getCla();
+  const podeGirar = (G.girosCla || 0) > 0;
+  document.getElementById('cla-html').innerHTML = `
+    <div class="cla-panel">
+      <div class="cla-header">
+        <div class="cla-kicker">ROULETTE DE LEGADO</div>
+        <div class="cla-copy">Depois de criar o personagem, sua família mágica define uma parte da build. Quanto mais raro, mais insano.</div>
+      </div>
+      <div class="cla-wheel-shell">
+        <div class="cla-wheel" id="cla-wheel">
+          ${CLAS.map(cla => `<div class="cla-chip rarity-${getRaridadeClass(cla.raridade)}">${cla.icon} ${cla.nome}</div>`).join('')}
+        </div>
+      </div>
+      <div id="cla-resultado">
+        ${atual ? renderClaCard(atual, !primeiraVez) : '<div class="cla-empty">Seu legado ainda está oculto. Gira a roleta e vê no que nasceu.</div>'}
+      </div>
+      <div class="cla-actions">
+        <button class="btn btn-center" onclick="girarCla()" ${!podeGirar ? 'disabled' : ''}>🎰 Girar (${G.girosCla || 0})</button>
+        ${atual ? '<button class="btn btn-center" onclick="go(\'s-result\');renderResultado()">Continuar</button>' : ''}
+        ${primeiraVez ? '<button class="btn btn-center" style="opacity:.65" onclick="startQuiz()">Refazer personagem</button>' : ''}
+      </div>
+      <div class="cla-hint">Balanceamento sugerido: primeiro giro grátis; giros extras começam em ${formatOuro(getClaPrice())}🪙 e sobem a cada nova troca de família para evitar spam e manter o lendário realmente especial.</div>
+    </div>`;
+}
+
+function renderClaCard(cla, mostrarTroca = false) {
+  return `
+    <div class="cla-card rarity-${getRaridadeClass(cla.raridade)}">
+      <div class="cla-card-top">
+        <div class="cla-badge" style="color:${cla.cor}">${cla.icon} ${cla.raridade}</div>
+        <div class="cla-name">${cla.nome}</div>
+      </div>
+      <div class="cla-desc">${cla.desc}</div>
+      ${mostrarTroca ? '<div class="cla-subhint">Se quiser trocar de família depois, compra giros na loja.</div>' : ''}
+    </div>`;
+}
+
+function girarCla() {
+  if ((G.girosCla || 0) < 1) {
+    notif('Sem giros de familia. Compra mais na loja.');
+    return;
+  }
+  G.girosCla--;
+  const cla = sortearCla();
+  const wheel = document.getElementById('cla-wheel');
+  if (wheel) wheel.classList.add('spinning');
+  setTimeout(() => {
+    if (wheel) wheel.classList.remove('spinning');
+    aplicarCla(cla);
+    renderClaRoleta(false);
+    document.getElementById('cla-resultado').innerHTML = renderClaCard(cla, true);
+    notif(`${cla.icon} Família ${cla.nome} despertou em você.`);
+    verificarConquistas();
+    queueAutoSave(200);
+  }, 1250);
 }
 
 function renderResultado() {
-  const casa=CASAS[G.casa], av=getAvatar(), vr=getVarinha();
+  const casa=CASAS[G.casa], av=getAvatar(), vr=getVarinha(), cla=getCla();
   document.getElementById('result-html').innerHTML=`
     <p style="text-align:center;font-size:10px;font-family:'Cinzel',serif;letter-spacing:2px;opacity:.5;margin-bottom:.5rem">O CHAPÉU SELETOR DECIDIU</p>
     <span class="crest">${casa.crest}</span>
@@ -353,6 +467,7 @@ function renderResultado() {
         <div style="font-size:11px;opacity:.6;display:flex;align-items:center;gap:4px">
           <span style="color:${vr.hex}">🪄</span> Varinha ${vr.nome}
         </div>
+        ${cla ? `<div style="font-size:10px;opacity:.75;color:${cla.cor};margin-top:3px">${cla.icon} Família ${cla.nome} · ${cla.raridade}</div>` : ''}
       </div>
     </div>
     <button class="btn btn-center" onclick="iniciarRpg()">⚔️ Iniciar Aventura</button>
@@ -360,6 +475,12 @@ function renderResultado() {
 }
 
 function iniciarRpg() {
+  if (!G.claId) {
+    go('s-cla');
+    renderClaRoleta(true);
+    notif('Antes de iniciar, gira sua família mágica.');
+    return;
+  }
   G.tempoInicio=Date.now();
   saveGame(); go('s-map'); renderMap();
 }
@@ -415,8 +536,9 @@ function renderMap() {
   if(Math.random()<0.12) setTimeout(()=>dispararEventoAleatorio(),500);
 
   const t=getTitulo();
+  const cla=getCla();
   document.getElementById('titulo-jogador').innerHTML=
-    `${getAvatar().emoji} <span style="font-family:'Cinzel',serif;font-size:12px">${G.nomePersonagem||'Bruxo'}</span> <span style="opacity:.5">${t.icon} ${t.titulo}</span>`;
+    `${getAvatar().emoji} <span style="font-family:'Cinzel',serif;font-size:12px">${G.nomePersonagem||'Bruxo'}</span> <span style="opacity:.5">${t.icon} ${t.titulo}</span>${cla ? ` <span style="opacity:.72;color:${cla.cor}">· ${cla.icon} ${cla.nome}</span>` : ''}`;
 
   document.getElementById('map-zones').innerHTML=ZONAS.map(z=>{
     const bloq=G.nivel<z.nivelMin;
@@ -687,6 +809,7 @@ function lancarFeitico(idx) {
   // Passiva Slytherin + vampirismo
   if(G.casa==='s'&&!isBasico) G.hp=Math.min(G.hpMax,G.hp+4);
   if(bonus.vampirismoPct>0&&!isBasico) G.hp=Math.min(G.hpMax,G.hp+Math.floor(dmg*bonus.vampirismoPct));
+  if(bonus.drenoBonus>0&&!isBasico) G.hp=Math.min(G.hpMax,G.hp+bonus.drenoBonus);
 
   // Escudo inimigo
   if(G.escudoInimigo) { dmg=Math.floor(dmg*0.5); G.escudoInimigo=false; addLog('🛡️ Escudo absorveu!','warn'); }
@@ -819,6 +942,7 @@ function vencerBatalha() {
   let xpGanho=Math.floor(ini.xp*xpBoostAtivo()*(1+getBonusHabilidades().xpPctBonus));
   let ouroGanho=ini.ouro;
   if(G.casa==='h') ouroGanho=Math.floor(ouroGanho*1.25);
+  if(getBonusHabilidades().ouroPct>0) ouroGanho=Math.floor(ouroGanho*(1+getBonusHabilidades().ouroPct));
   if(G.masmorraAtual?._bonusOuro) { ouroGanho=Math.floor(ouroGanho*(1+G.masmorraAtual._bonusOuro)); G.masmorraAtual._bonusOuro=0; }
 
   G.xp+=xpGanho; G.ouro+=ouroGanho; G.inBattle=false;
@@ -1044,10 +1168,14 @@ function renderShop() {
   const d=getDesconto();
   const rv=G.casa==='r'?`<div class="passiva-loja-info">📚 Mente Arcana: 15% de desconto!</div>`:'';
   const c=LOJA_ITENS.filter(it=>it.tipo==='consumivel'&&G.nivel>=it.nivelMin);
+  const f=LOJA_ITENS.filter(it=>it.tipo==='cla'&&G.nivel>=it.nivelMin);
   const x=LOJA_ITENS.filter(it=>it.tipo==='xppot'&&G.nivel>=it.nivelMin);
   const e=LOJA_ITENS.filter(it=>(it.tipo==='varinha'||it.tipo==='permanente')&&G.nivel>=it.nivelMin);
+  const cla=getCla();
   document.getElementById('shop-items').innerHTML=`${rv}
+    <div class="passiva-loja-info">${cla ? `${cla.icon} Família atual: <strong>${cla.nome}</strong> · ${cla.raridade}` : 'Família ainda não definida.'}<br>Preço atual do giro: <strong>🪙${formatOuro(getClaPrice())}</strong></div>
     <div class="shop-section"><h3>⚗️ Poções</h3>${c.map(it=>rowItemHTML(it,d)).join('')||_semItens()}</div>
+    <div class="shop-section"><h3>🎰 Giros de Família</h3>${f.map(it=>rowItemHTML(it,d)).join('')||_semItens()}</div>
     <div class="shop-section"><h3>⭐ Poções de XP</h3>${x.map(it=>rowItemHTML(it,d)).join('')||_semItens()}</div>
     <div class="shop-section"><h3>🪄 Equipamentos</h3>${e.map(it=>rowItemHTML(it,d)).join('')||_semItens()}</div>`;
 }
@@ -1059,7 +1187,8 @@ function rowItemHTML(it,d=1.0) {
     else if(it.varinhaLvl>1&&!G.varinhasCompradas[it.varinhaLvl-1]){bloq=true;motivo=`Requer tier ${it.varinhaLvl-1}`;}
   }
   if(it.tipo==='permanente'&&G.permanentesComprados[it.id]){bloq=true;motivo='Já comprado';}
-  const p=Math.floor(it.preco*d), semOuro=G.ouro<p;
+  const basePrice=it.tipo==='cla'?getClaPrice():it.preco;
+  const p=Math.floor(basePrice*d), semOuro=G.ouro<p;
   const badge=bloq?`<span class="badge badge-lock">${motivo}</span>`:'';
   return `<div class="shop-row"><div class="shop-row-info">${it.icon} <strong>${it.nome}</strong>${badge}<br><span style="font-size:11px;opacity:.6">${it.desc}</span></div><button class="btn" style="padding:5px 11px;font-size:11px;white-space:nowrap" onclick="comprar('${it.id}')" ${bloq||semOuro?'disabled':''}>🪙${formatOuro(p)}</button></div>`;
 }
@@ -1067,7 +1196,7 @@ function rowItemHTML(it,d=1.0) {
 function comprar(id) {
   const d=getDesconto(), lj=LOJA_ITENS.find(i=>i.id===id);
   if(!lj) return;
-  const p=Math.floor(lj.preco*d);
+  const p=Math.floor((lj.tipo==='cla'?getClaPrice():lj.preco)*d);
   if(G.ouro<p){notif('Ouro insuficiente!');return;}
   G.ouro-=p; tocarSom('compra');
   if(lj.tipo==='varinha'){const b=lj.varinhaLvl===1?10:lj.varinhaLvl===2?25:50;G.bonusDmg+=b;G.varinhasCompradas[lj.varinhaLvl]=true;notif(`${lj.icon} +${b} dano!`);}
@@ -1077,6 +1206,9 @@ function comprar(id) {
     if(id==='colar_crit'){G.chanceCritico=(G.chanceCritico||.10)+.10;notif('🍀 Crítico +10%!');}
     if(id==='anel_xp'){G.xpBoostPassiva=true;notif('💍 +15% XP!');}
     G.permanentesComprados[id]=true;
+  } else if(lj.tipo==='cla') {
+    G.girosCla=(G.girosCla||0)+1;
+    notif(`🎰 Giro de família comprado! Total: ${G.girosCla}`);
   } else {
     const ex=G.inv.find(i=>i.id===id);
     if(ex) ex.qtd++; else G.inv.push({...lj,qtd:1});
@@ -1218,6 +1350,7 @@ function renderStats() {
   const top=Object.entries(G.killsPorTipo||{}).sort((a,b)=>b[1]-a[1])[0];
   const bonus=getBonusHabilidades();
   const vr=getVarinha();
+  const cla=getCla();
   document.getElementById('stats-content').innerHTML=`
     <div class="stats-grid">
       <div class="stat-item"><div class="stat-item-val">${G.nivel}</div><div class="stat-item-label">Nível</div></div>
@@ -1233,6 +1366,7 @@ function renderStats() {
       <div class="stat-item"><div class="stat-item-val">${G.conquistasDesbloqueadas.length}/${CONQUISTAS_DEF.length}</div><div class="stat-item-label">Troféus</div></div>
       <div class="stat-item"><div class="stat-item-val">${t}</div><div class="stat-item-label">Tempo</div></div>
     </div>
+    ${cla ? `<div class="passiva-loja-info">${cla.icon} Família <strong>${cla.nome}</strong> · ${cla.raridade} · giros guardados: ${G.girosCla || 0}</div>` : ''}
     <div style="border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:.8rem;background:rgba(255,255,255,.03);margin-top:.5rem">
       <div style="font-family:'Cinzel',serif;font-size:10px;opacity:.5;margin-bottom:.5rem">BÔNUS ATIVOS</div>
       <div style="font-size:12px;line-height:1.8">
@@ -1245,7 +1379,21 @@ function renderStats() {
     </div>
     ${top?`<div style="text-align:center;font-size:11px;opacity:.5;margin-top:.5rem">Favorito: <strong>${INIMIGOS_BASE[top[0]]?.nome||top[0]}</strong> (${top[1]}x)</div>`:''}`;
 }
-
+// Função global para acesso do desenvolvedor
+window.ativarModoADM = function(senha) {
+  if (senha === "Hogwarts2026") { // Altera a tua senha aqui
+    G.ouro += 999999;
+    G.nivel = 999;
+    G.hp = G.hpMax = 999;
+    G.mp = G.mpMax = 999;
+    
+    notif("MODO ADM ATIVADO: Recursos maximizados!", "vitoria");
+    tocarSom("levelup");
+    renderMap(); // Atualiza a interface
+  } else {
+    console.warn("Acesso negado.");
+  }
+};
 // ══════════════════════════════════════════
 //  NOTIFICAÇÃO
 // ══════════════════════════════════════════
@@ -1255,4 +1403,11 @@ function notif(msg) {
   el.textContent=msg; el.style.display='block';
   clearTimeout(_notifTimer);
   _notifTimer=setTimeout(()=>{el.style.display='none';},2500);
+
+  window.addEventListener('keydown', (e) => {
+  if (e.key === 'ç') {
+    const pass = prompt("Introduza a senha de desenvolvedor:");
+    ativarModoADM(pass);
+  }
+});
 }
