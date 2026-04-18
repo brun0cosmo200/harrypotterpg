@@ -929,15 +929,40 @@ function aplicarHabilidadeInimigo(hab) {
 }
 
 function verificarLevelUp() {
+  const MAX_NIVEL = 70;  // 🆕 LIMITE ADICIONADO
   let ups = 0;
-  while (G.xp >= G.xpNext) {
-    G.xp -= G.xpNext; G.nivel++;
+  
+  while (G.xp >= G.xpNext && G.nivel < MAX_NIVEL) {
+    G.xp -= G.xpNext; 
+    G.nivel++;
     G.xpNext = Math.floor(G.nivel * 120);
     G.hpMax += 20; G.hp = G.hpMax;
     G.mpMax += 10; G.mp = G.mpMax;
-    ups++; tocarSom('levelup');
-    if ([5,10,20,30].includes(G.nivel)) adicionarDiario('nivel_'+G.nivel);
+    ups++; 
+    tocarSom('levelup');
+    
+    // Eventos especiais
+    if ([5,10,20,30,50,70].includes(G.nivel)) {
+      adicionarDiario('nivel_'+G.nivel);
+      if (G.nivel === 70) {
+        notif('🏆 NÍVEL MÁXIMO 70 ATINGIDO! 👑');
+        adicionarDiario('nivel_max');
+        verificarConquistas(); // Nova conquista automática
+      }
+    }
   }
+  
+  // 🆕 MENSAGEM quando bater no teto
+  if (G.nivel >= MAX_NIVEL && G.xp >= G.xpNext) {
+    notif('⚔️ Nível 70 é o ápice da magia! XP extra convertido em ouro.');
+    // Converter XP excedente em ouro (1:10)
+    const xpExtra = G.xp - G.xpNext;
+    const ouroBonus = Math.floor(xpExtra * 0.1);
+    G.ouro += ouroBonus;
+    G.xp = 0; // Reset XP para não acumular
+    saveGame();
+  }
+  
   return ups;
 }
 
