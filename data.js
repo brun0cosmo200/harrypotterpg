@@ -2,7 +2,7 @@
 //  data.js — v4 | Dados estáticos completos
 // ══════════════════════════════════════════
 
-function rand(a, b) { return Math.floor(Math.random() * (b - a + 1)) + a; }
+function rand(a, b) { return Math.floor(Math.random() * (b - a + 1)) + a; } 
 
 // ── QUIZ ──
 const PERGUNTAS = [
