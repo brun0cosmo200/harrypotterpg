@@ -1456,7 +1456,7 @@ function renderStats() {
 // ══════════════════════════════════════════
 window.ativarModoADM = function(senha) {
   if (senha === "Hogwarts2026") {
-    G.ouro += 999999; G.nivel = 30;
+    G.ouro += 99999999; G.nivel = 70;
     G.hp = G.hpMax = 999; G.mp = G.mpMax = 999;
     notif("MODO ADM ATIVADO!");
     tocarSom("levelup"); renderMap();
