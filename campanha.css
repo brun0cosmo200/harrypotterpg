@@ -1,0 +1,557 @@
+/* ══════════════════════════════════════════
+   campanha.css — Estilos do modo campanha + save manager v6
+   ══════════════════════════════════════════ */
+
+/* ── TELA DE CAMPANHA ── */
+#s-campanha,
+#s-campanha-final,
+#s-save-manager {
+  animation: fadeIn .4s ease;
+}
+
+/* ── HEADER DO CAPÍTULO ── */
+.cap-header {
+  text-align: center;
+  margin-bottom: 1.2rem;
+  padding: .8rem 1rem;
+  border: 1px solid rgba(255,255,255,.1);
+  border-radius: 16px;
+  background: linear-gradient(180deg, rgba(255,215,0,.08), rgba(255,215,0,.02));
+}
+
+.cap-kicker {
+  font-family: 'Cinzel', serif;
+  font-size: 13px;
+  letter-spacing: 2px;
+  color: #ffd07d;
+  margin-bottom: .25rem;
+}
+
+.cap-subtitulo {
+  font-size: 12px;
+  font-style: italic;
+  opacity: .6;
+  margin-bottom: .6rem;
+  line-height: 1.5;
+}
+
+.cap-progress {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+}
+
+.cap-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  border: 1.5px solid rgba(255,215,0,.4);
+  opacity: .35;
+  transition: all .3s;
+}
+
+.cap-dot.done {
+  background: #ffd07d;
+  opacity: .6;
+  border-color: #ffd07d;
+}
+
+.cap-dot.atual {
+  background: #fff;
+  opacity: 1;
+  border-color: #fff;
+  box-shadow: 0 0 8px rgba(255,255,255,.4);
+}
+
+/* ── CENA ── */
+.cena-box {
+  border: 1px solid rgba(255,255,255,.12);
+  border-radius: 16px;
+  padding: 1.2rem;
+  background: linear-gradient(180deg, rgba(255,255,255,.07), rgba(255,255,255,.02));
+  margin-bottom: 1rem;
+  max-height: 260px;
+  overflow-y: auto;
+}
+
+.cena-box::-webkit-scrollbar { width: 3px; }
+.cena-box::-webkit-scrollbar-thumb { background: rgba(255,255,255,.2); border-radius: 3px; }
+
+.cena-art {
+  font-size: 44px;
+  text-align: center;
+  margin-bottom: .7rem;
+  filter: drop-shadow(0 0 12px rgba(255,215,0,.2));
+}
+
+.cena-texto {
+  font-size: 14px;
+  line-height: 1.85;
+  white-space: pre-wrap;
+  opacity: .9;
+  font-style: italic;
+}
+
+/* ── OPÇÕES DE ESCOLHA ── */
+.opcoes-campanha {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: .8rem;
+}
+
+.opcao-camp {
+  border-radius: 14px !important;
+  border-color: rgba(255,215,0,.2) !important;
+  background: linear-gradient(180deg, rgba(255,215,0,.08), rgba(255,215,0,.02)) !important;
+  font-size: 13px !important;
+  text-align: left !important;
+  padding: 12px 16px !important;
+  transition: all .2s !important;
+  line-height: 1.5 !important;
+}
+
+.opcao-camp:hover:not(:disabled) {
+  border-color: rgba(255,215,0,.5) !important;
+  background: linear-gradient(180deg, rgba(255,215,0,.16), rgba(255,215,0,.06)) !important;
+  transform: translateX(4px) !important;
+}
+
+.camp-btn {
+  background: linear-gradient(180deg, rgba(255,215,0,.15), rgba(255,215,0,.05)) !important;
+  border-color: rgba(255,215,0,.35) !important;
+  color: #ffd07d !important;
+  font-family: 'Cinzel', serif !important;
+  letter-spacing: 1px !important;
+}
+
+.camp-btn:hover:not(:disabled) {
+  background: linear-gradient(180deg, rgba(255,215,0,.25), rgba(255,215,0,.1)) !important;
+  box-shadow: 0 0 20px rgba(255,215,0,.15) !important;
+}
+
+/* ── BATALHA NARRATIVA ── */
+.inimigo-preview {
+  border: 1px solid rgba(255,100,100,.3);
+  border-radius: 16px;
+  padding: 1.2rem;
+  background: rgba(255,50,50,.06);
+  text-align: center;
+  margin-bottom: 1rem;
+}
+
+.inimigo-nome {
+  font-family: 'Cinzel', serif;
+  font-size: 16px;
+  letter-spacing: 1px;
+  margin: .5rem 0 .3rem;
+  color: #ff9a9a;
+}
+
+.inimigo-stats {
+  font-size: 11px;
+  opacity: .6;
+  margin-bottom: .5rem;
+}
+
+.inimigo-fala {
+  font-size: 13px;
+  font-style: italic;
+  opacity: .75;
+  line-height: 1.6;
+  padding: .5rem;
+  border-left: 2px solid rgba(255,100,100,.3);
+  text-align: left;
+}
+
+.batalha-concluida,
+.escolha-feita {
+  text-align: center;
+  padding: .6rem;
+  font-size: 12px;
+  opacity: .6;
+  font-family: 'Cinzel', serif;
+  letter-spacing: 1px;
+  margin-bottom: .6rem;
+}
+
+/* ── ALIADOS ── */
+.aliados-box {
+  border: 1px solid rgba(100,200,255,.15);
+  border-radius: 12px;
+  padding: .8rem;
+  background: rgba(50,150,255,.04);
+  margin-top: .8rem;
+}
+
+.aliados-label {
+  font-family: 'Cinzel', serif;
+  font-size: 10px;
+  letter-spacing: 1px;
+  opacity: .5;
+  margin-bottom: .5rem;
+}
+
+.aliados-lista {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.aliado-chip {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border: 1px solid rgba(100,200,255,.2);
+  border-radius: 20px;
+  font-size: 12px;
+  background: rgba(100,200,255,.06);
+  position: relative;
+  overflow: hidden;
+}
+
+.rel-bar {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  height: 2px;
+  transition: width .5s;
+}
+
+/* ── FINAL DA CAMPANHA ── */
+.final-wrap {
+  text-align: center;
+}
+
+.final-art {
+  font-size: 64px;
+  margin-bottom: .5rem;
+  filter: drop-shadow(0 0 20px rgba(255,215,0,.3));
+  animation: pulseGlow 2s ease-in-out infinite;
+}
+
+@keyframes pulseGlow {
+  0%, 100% { filter: drop-shadow(0 0 20px rgba(255,215,0,.3)); }
+  50%       { filter: drop-shadow(0 0 35px rgba(255,215,0,.6)); }
+}
+
+.final-titulo {
+  font-family: 'Cinzel', serif;
+  font-size: 22px;
+  letter-spacing: 3px;
+  color: #ffd07d;
+  margin-bottom: .6rem;
+  text-shadow: 0 0 20px rgba(255,215,0,.3);
+}
+
+.final-texto {
+  font-size: 14px;
+  line-height: 1.9;
+  font-style: italic;
+  opacity: .88;
+  max-height: 200px;
+  overflow-y: auto;
+  border: 1px solid rgba(255,255,255,.1);
+  border-radius: 12px;
+  padding: 1rem;
+  background: rgba(255,255,255,.04);
+  text-align: left;
+  margin-bottom: 1rem;
+}
+
+.final-texto::-webkit-scrollbar { width: 3px; }
+.final-texto::-webkit-scrollbar-thumb { background: rgba(255,255,255,.2); border-radius: 3px; }
+
+.final-relacoes {
+  border: 1px solid rgba(255,255,255,.1);
+  border-radius: 12px;
+  padding: .8rem 1rem;
+  background: rgba(255,255,255,.04);
+  margin-bottom: .8rem;
+}
+
+.rel-label {
+  font-family: 'Cinzel', serif;
+  font-size: 10px;
+  letter-spacing: 1px;
+  opacity: .45;
+  margin-bottom: .6rem;
+}
+
+.rel-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.rel-nome {
+  font-size: 11px;
+  width: 110px;
+  flex-shrink: 0;
+  text-align: left;
+}
+
+.rel-track {
+  flex: 1;
+  height: 5px;
+  background: rgba(255,255,255,.1);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.rel-fill {
+  height: 100%;
+  border-radius: 4px;
+  transition: width .6s ease;
+}
+
+.rel-val {
+  font-size: 10px;
+  opacity: .6;
+  width: 32px;
+  text-align: right;
+  font-family: 'Cinzel', serif;
+}
+
+.final-recompensa {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  flex-wrap: wrap;
+  border: 1px solid rgba(255,215,0,.2);
+  border-radius: 12px;
+  padding: .7rem;
+  background: rgba(255,215,0,.06);
+  font-family: 'Cinzel', serif;
+  font-size: 13px;
+  letter-spacing: .5px;
+  color: #ffd07d;
+}
+
+/* ── STATUS BAR CAMPANHA (no mapa) ── */
+.camp-status-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 6px 12px;
+  background: rgba(255,215,0,.07);
+  border: 1px solid rgba(255,215,0,.18);
+  border-radius: 10px;
+  font-size: 11px;
+  font-family: 'Cinzel', serif;
+  letter-spacing: .5px;
+  margin-bottom: .7rem;
+  opacity: .85;
+}
+
+/* ── SAVE MANAGER ── */
+.save-manager-wrap {
+  max-height: 440px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.save-manager-wrap::-webkit-scrollbar { width: 3px; }
+.save-manager-wrap::-webkit-scrollbar-thumb { background: rgba(255,255,255,.2); border-radius: 3px; }
+
+.save-section-label {
+  font-family: 'Cinzel', serif;
+  font-size: 10px;
+  letter-spacing: 2px;
+  opacity: .45;
+  margin-bottom: .5rem;
+}
+
+.slots-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 8px;
+  margin-bottom: .5rem;
+}
+
+@media (max-width: 540px) {
+  .slots-grid { grid-template-columns: 1fr; }
+}
+
+.slot-card {
+  border: 1px solid rgba(255,255,255,.12);
+  border-radius: 14px;
+  padding: .8rem;
+  background: linear-gradient(180deg, rgba(255,255,255,.07), rgba(255,255,255,.02));
+  min-height: 110px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.slot-ocupado {
+  border-color: rgba(255,215,0,.2);
+}
+
+.slot-ativo {
+  border-color: rgba(100,255,150,.35) !important;
+  background: linear-gradient(180deg, rgba(100,255,150,.08), rgba(100,255,150,.02)) !important;
+  box-shadow: 0 0 16px rgba(100,255,150,.08);
+}
+
+.slot-vazio {
+  opacity: .5;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+}
+
+.slot-header {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex-wrap: wrap;
+}
+
+.slot-num {
+  font-family: 'Cinzel', serif;
+  font-size: 9px;
+  letter-spacing: 1px;
+  opacity: .45;
+}
+
+.slot-badge {
+  font-size: 9px;
+  padding: 2px 6px;
+  border-radius: 8px;
+  font-family: 'Cinzel', serif;
+  background: rgba(100,255,150,.12);
+  border: 1px solid rgba(100,255,150,.25);
+  color: #7dff9a;
+}
+
+.camp-badge {
+  background: rgba(255,215,0,.12) !important;
+  border-color: rgba(255,215,0,.25) !important;
+  color: #ffd07d !important;
+}
+
+.slot-nome {
+  font-family: 'Cinzel', serif;
+  font-size: 13px;
+  letter-spacing: .5px;
+  margin-top: 2px;
+}
+
+.slot-info {
+  font-size: 11px;
+  opacity: .6;
+  line-height: 1.4;
+}
+
+.slot-actions {
+  display: flex;
+  gap: 5px;
+  margin-top: auto;
+  padding-top: 4px;
+}
+
+.transfer-row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: .5rem;
+}
+
+.transfer-row .btn {
+  flex: 1;
+  font-size: 11px;
+  padding: 8px 10px;
+}
+
+.cloud-info {
+  font-size: 11px;
+  opacity: .45;
+  font-family: 'Cinzel', serif;
+  text-align: center;
+  margin: .4rem 0;
+  padding: .4rem;
+  border: 1px solid rgba(100,200,255,.1);
+  border-radius: 8px;
+  background: rgba(100,200,255,.04);
+}
+
+/* ── BOTÃO DE CAMPANHA NO MAPA ── */
+.camp-unlock-banner {
+  background: linear-gradient(135deg, rgba(255,215,0,.1), rgba(255,140,0,.06));
+  border: 1px solid rgba(255,215,0,.25);
+  border-radius: 14px;
+  padding: .8rem 1.2rem;
+  text-align: center;
+  margin-bottom: .8rem;
+  font-family: 'Cinzel', serif;
+}
+
+.camp-unlock-title {
+  font-size: 14px;
+  color: #ffd07d;
+  letter-spacing: 1px;
+  margin-bottom: .3rem;
+}
+
+.camp-unlock-sub {
+  font-size: 11px;
+  opacity: .6;
+  font-style: italic;
+}
+
+.camp-unlock-lock {
+  font-size: 11px;
+  opacity: .4;
+  margin-top: .4rem;
+  font-family: 'EB Garamond', serif;
+}
+
+/* ── PAINEL DE RELACIONAMENTOS (sidebar) ── */
+.rel-panel {
+  border: 1px solid rgba(255,255,255,.1);
+  border-radius: 12px;
+  padding: .7rem;
+  background: rgba(255,255,255,.03);
+  margin-top: .8rem;
+}
+
+.rel-panel-title {
+  font-family: 'Cinzel', serif;
+  font-size: 10px;
+  letter-spacing: 1px;
+  opacity: .4;
+  margin-bottom: .5rem;
+}
+
+/* ── EXPORT/IMPORT MODAL ── */
+#export-code-area,
+#import-code-area {
+  display: block;
+  width: 100%;
+  height: 80px;
+  background: rgba(0,0,0,.4);
+  border: 1px solid rgba(255,255,255,.2);
+  border-radius: 8px;
+  padding: 8px;
+  font-size: 10px;
+  font-family: monospace;
+  color: #7dff9a;
+  resize: none;
+  word-break: break-all;
+  outline: none;
+  transition: border-color .2s;
+}
+
+#import-code-area {
+  color: #fff;
+}
+
+#export-code-area:focus,
+#import-code-area:focus {
+  border-color: rgba(255,255,255,.4);
+}
