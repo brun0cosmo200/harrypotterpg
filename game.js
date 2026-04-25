@@ -1,6 +1,7 @@
 // ══════════════════════════════════════════
-//  game.js — v5 | Lógica principal
-//  Changelog: mascotes, rebalanceamento, clã trocável
+//  game.js — v6 | Lógica principal melhorada
+//  Melhorias: balanceamento, UX, feedback de relacionamentos,
+//             tela de game over rica, estado de batalha corrigido
 // ══════════════════════════════════════════
 
 let G = estadoInicial();
@@ -12,7 +13,7 @@ function estadoInicial() {
     avatarId: "mago_m", varinhaId: "dourada", nomePersonagem: "",
     // Clã
     claId: null, claRaridade: null, claHistorico: [], girosCla: 1,
-    // Mascote — NOVO
+    // Mascote
     mascoteId: null, mascoteHistorico: [], girosMascote: 0, ressurgirMascoteUsado: false,
     // Stats
     hp: 100, hpMax: 100, mp: 60, mpMax: 60,
@@ -31,6 +32,9 @@ function estadoInicial() {
     escudoArcanoAtivo: false,
     ressurgirUsado: false,
     transcendenciaAtiva: false,
+    // Momentum de batalha (novo sistema)
+    momentumAtual: 0,      // 0-3 hits seguidos = carga especial
+    momentumCarregado: false,
     // Masmorras
     masmorraAtual: null,
     masmorrasCompletas: 0,
@@ -42,6 +46,8 @@ function estadoInicial() {
     streakAtual: 0, streakMax: 0,
     totalBatalhas: 0, derrotas: 0,
     tempoInicio: Date.now(),
+    // Runs stats (acumulado entre derrotas)
+    runStats: { kills:0, danoTotal:0, feiticosUsados:0, iniciouEm: Date.now() },
     // Progressão
     missoesCompletas: [],
     conquistasDesbloqueadas: [],
@@ -55,6 +61,7 @@ function estadoInicial() {
     escudoInimigo: false, esquivaInimigo: false,
     buffDanoUmaBatalha: 0,
     pactoSombrio: false,
+    _batalha_campanha: false,  // FIX: sempre inicializado
     // Descanso
     descansoExpiry: 0,
     saveAt: 0,
@@ -146,15 +153,15 @@ function getMascotePrice() {
 
 function aplicarMascote(mascote) {
   const anterior = getMascote();
-  // Reverter bônus do mascote anterior
   if (anterior) {
     if (anterior.bonus?.hp)   { G.hpMax = Math.max(80, G.hpMax - anterior.bonus.hp); G.hp = Math.min(G.hp, G.hpMax); }
+    if (anterior.bonus?.mp)   { G.mpMax = Math.max(40, G.mpMax - anterior.bonus.mp); G.mp = Math.min(G.mp, G.mpMax); }
     if (anterior.bonus?.crit) { G.chanceCritico = Math.max(0.10, G.chanceCritico - anterior.bonus.crit); }
   }
   G.mascoteId = mascote.id;
   G.mascoteHistorico = [...new Set([...(G.mascoteHistorico || []), mascote.id])];
-  // Aplicar novo bônus
   if (mascote.bonus?.hp)   { G.hpMax += mascote.bonus.hp; G.hp = Math.min(G.hp + mascote.bonus.hp, G.hpMax); }
+  if (mascote.bonus?.mp)   { G.mpMax += mascote.bonus.mp; G.mp = Math.min(G.mp + mascote.bonus.mp, G.mpMax); }
   if (mascote.bonus?.crit) { G.chanceCritico = Math.min(0.60, (G.chanceCritico || 0.10) + mascote.bonus.crit); }
 }
 
@@ -171,21 +178,35 @@ function girarMascote() {
 }
 
 // ── BÔNUS DAS HABILIDADES ──
-// Cap total de dano em 60% para evitar quebrar o jogo
+// Balanceamento melhorado: caps mais apertados
+// ── CACHE DE BÔNUS (performance: evita recalcular 6-8x por turno) ──
+let _bonusCache = null;
+let _bonusCacheKey = '';
+function _invalidarBonusCache() { _bonusCache = null; }
+
 function getBonusHabilidades() {
+  // Gera chave de cache com os campos que influenciam o resultado
+  const cacheKey = [
+    (G.habilidadesAprendidas||[]).join(','),
+    G.claId, G.mascoteId, G.xpBoostPassiva,
+    G.frenesiStacks, G.buffDanoUmaBatalha, G.pactoSombrio
+  ].join('|');
+  if (_bonusCache && _bonusCacheKey === cacheKey) return _bonusCache;
+  _bonusCacheKey = cacheKey;
+
   const h = G.habilidadesAprendidas || [];
   const tem = (id) => h.includes(id);
   const cla = getClaBonus();
   const mas = getMascoteBonus();
 
-  // Calcula dano bruto e aplica cap de 60%
+  // Cap de dano em 50% (rebalanceado de 60%)
   const danoPctBruto = (tem('foco')       ? 0.08 : 0)
-                     + (tem('devastacao') ? 0.20 : 0)
+                     + (tem('devastacao') ? 0.18 : 0)  // Era 0.20, levemente reduzido
                      + (tem('lendario')   ? 0.05 : 0)
                      + (cla.danoPct       || 0);
 
-  return {
-    danoPct:       Math.min(danoPctBruto, 0.60),
+  const _result = {
+    danoPct:       Math.min(danoPctBruto, 0.50),
     hpMaxBonus:    (tem('resistencia') ? 20 : 0) + (tem('lendario') ? 30 : 0) - (tem('devastacao') ? 12 : 0),
     mpMaxBonus:    (tem('lendario') ? 15 : 0) - (tem('troca_mp_hp') ? 15 : 0),
     mpRegenExtra:  (tem('catalise') ? 3 : 0),
@@ -195,17 +216,21 @@ function getBonusHabilidades() {
     frenesissi:    tem('frenesi'),
     manaSurgePct:  tem('mana_surge') ? 0.18 : 0,
     dmgReducPct:   tem('fortress') ? 0.15 : 0,
-    criticoMult:   tem('critico_mortal') ? 3.0 : 2.0,
+    criticoMult:   tem('critico_mortal') ? 2.5 : 2.0,
     xpPctBonus:    (tem('maestria') ? 0.20 : 0) + (G.xpBoostPassiva ? 0.15 : 0) + (mas.xpPct || 0),
     ressurgir:     tem('ressurgir'),
-    colapso:       tem('colapso') ? 0.60 : 0,
-    eterno:        tem('eterno'),
+    colapso:       tem('colapso') ? 0.50 : 0,
+    ressurgencia:  tem('ressurgencia') ? 0.50 : 0,
     arcano_puro:   tem('arcano_puro') ? 0.25 : 0,
     transcendencia:tem('transcendencia'),
     drenoBonus:    cla.dreno || 0,
     ouroPct:       (cla.ouroPct || 0) + (mas.ouroPct || 0),
     ressurgirMascote: mas.ressurgirMascote || 0,
+    frenesiCap: 5,
+    pactoMult: 1.6,
   };
+  _bonusCache = _result;
+  return _result;
 }
 
 function getTodosFeiticos() {
@@ -219,9 +244,15 @@ function getTodosFeiticos() {
   return [ATAQUE_BASICO, ...casaFeiticos, ...aprendidos];
 }
 
-// ── SOM ──
+// ── SOM AMBIENTE ──
 let audioCtx=null, somAtivado=true;
-function getAudioCtx() { if(!audioCtx) audioCtx=new(window.AudioContext||window.webkitAudioContext)(); return audioCtx; }
+let _ambienceNode=null, _ambienceGain=null;
+
+function getAudioCtx() {
+  if(!audioCtx) audioCtx=new(window.AudioContext||window.webkitAudioContext)();
+  return audioCtx;
+}
+
 function tocarSom(tipo) {
   if(!somAtivado) return;
   try {
@@ -236,7 +267,8 @@ function tocarSom(tipo) {
       compra:    {freq:392, tipo:'sine',     dur:.20, vol:.12},
       erro:      {freq:80,  tipo:'square',   dur:.15, vol:.10},
       notif:     {freq:330, tipo:'sine',     dur:.18, vol:.10},
-      habilidade:{freq:550, tipo:'sine',     dur:.60, vol:.22}
+      habilidade:{freq:550, tipo:'sine',     dur:.60, vol:.22},
+      momentum:  {freq:660, tipo:'sine',     dur:.25, vol:.18},
     };
     const c=C[tipo]||C.notif;
     osc.type=c.tipo; osc.frequency.setValueAtTime(c.freq, ctx.currentTime);
@@ -244,6 +276,62 @@ function tocarSom(tipo) {
     gain.gain.exponentialRampToValueAtTime(.001, ctx.currentTime+c.dur);
     osc.start(ctx.currentTime); osc.stop(ctx.currentTime+c.dur);
   } catch(e){}
+}
+
+// Som ambiente por zona
+function iniciarSomAmbiente(zonaId) {
+  if (!somAtivado) return;
+  pararSomAmbiente();
+  try {
+    const ctx = getAudioCtx();
+    const bufferSize = 4096;
+    const node = ctx.createScriptProcessor(bufferSize, 1, 1);
+    const gainNode = ctx.createGain();
+    gainNode.gain.value = 0;
+
+    const configs = {
+      corredor:   { vol: 0.02, freq: 80  },
+      biblioteca: { vol: 0.015, freq: 60 },
+      floresta:   { vol: 0.03, freq: 120 },
+      lago:       { vol: 0.025, freq: 90 },
+      dungeons:   { vol: 0.02, freq: 50  },
+      cemiterio:  { vol: 0.025, freq: 70 },
+      camara:     { vol: 0.03, freq: 100 },
+      ministerio: { vol: 0.02, freq: 85  },
+      azkaban:    { vol: 0.035, freq: 40 },
+      torre:      { vol: 0.04, freq: 110 },
+    };
+    const cfg = configs[zonaId] || { vol: 0.02, freq: 80 };
+
+    node.onaudioprocess = (e) => {
+      const out = e.outputBuffer.getChannelData(0);
+      for (let i = 0; i < bufferSize; i++) {
+        out[i] = (Math.random() * 2 - 1) * cfg.vol;
+      }
+    };
+
+    node.connect(gainNode);
+    gainNode.connect(ctx.destination);
+
+    // Fade in
+    gainNode.gain.linearRampToValueAtTime(1, ctx.currentTime + 2);
+
+    _ambienceNode = node;
+    _ambienceGain = gainNode;
+  } catch(e) {}
+}
+
+function pararSomAmbiente() {
+  try {
+    if (_ambienceGain) {
+      const ctx = getAudioCtx();
+      _ambienceGain.gain.linearRampToValueAtTime(0, ctx.currentTime + 1);
+      setTimeout(() => {
+        try { _ambienceNode?.disconnect(); _ambienceGain?.disconnect(); } catch(e) {}
+        _ambienceNode = null; _ambienceGain = null;
+      }, 1100);
+    }
+  } catch(e) {}
 }
 
 // ══════════════════════════════════════════
@@ -302,6 +390,7 @@ function tickBoost() {
 function go(id) {
   document.querySelectorAll('#happ .screen').forEach(s => s.classList.remove('active'));
   document.getElementById(id).classList.add('active');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
 function resetAll() {
@@ -309,12 +398,18 @@ function resetAll() {
   document.getElementById('happ').className = 'th-d';
   document.getElementById('continue-section').innerHTML = '';
   document.getElementById('start-btn').textContent = 'Colocar o Chapéu';
+  pararSomAmbiente();
 }
 
 function restartRpg() {
   G.hp=G.hpMax; G.mp=G.mpMax; G.inBattle=false; G.inimigo=null;
   G.venenoTurnos=0; G.escudoInimigo=false; G.esquivaInimigo=false;
   G.streakAtual=0; G.frenesiStacks=0;
+  G._batalha_campanha = false;  // FIX: sempre resetar
+  G.momentumAtual = 0; G.momentumCarregado = false;
+  // Reset run stats
+  G.runStats = { kills:0, danoTotal:0, feiticosUsados:0, iniciouEm: Date.now() };
+  pararSomAmbiente();
   go('s-map'); renderMap();
 }
 
@@ -324,7 +419,12 @@ function voltarDoBolso() {
 }
 
 function startQuiz()  { G = estadoInicial(); go('s-quiz'); renderQ(); }
-function toggleSom()  { somAtivado = !somAtivado; const b=document.getElementById('btn-som'); if(b) b.textContent=somAtivado?'🔊':'🔇'; }
+function toggleSom()  {
+  somAtivado = !somAtivado;
+  const b=document.getElementById('btn-som');
+  if(b) b.textContent=somAtivado?'🔊':'🔇';
+  if (!somAtivado) pararSomAmbiente();
+}
 
 // ══════════════════════════════════════════
 //  QUIZ
@@ -518,6 +618,7 @@ function renderResultado() {
 function iniciarRpg() {
   if (!G.claId) { go('s-cla'); renderClaRoleta(true); notif('Antes de iniciar, gira sua família mágica.'); return; }
   G.tempoInicio = Date.now();
+  G.runStats = { kills:0, danoTotal:0, feiticosUsados:0, iniciouEm: Date.now() };
   saveGame(); go('s-map'); renderMap();
 }
 
@@ -559,7 +660,6 @@ function statusHTML() {
 function renderMap() {
   document.getElementById('status-top').innerHTML = statusHTML();
 
-  // Verificar habilidade disponível para escolher
   const tierDisponivel = Object.keys(ARVORE_HABILIDADES).find(n => {
     const nivel = parseInt(n);
     return G.nivel >= nivel && !G.habilidadesAprendidas.some(h => ARVORE_HABILIDADES[nivel]?.find(x => x.id === h));
@@ -587,6 +687,7 @@ function renderMap() {
       </button>`;
   }).join('');
 
+  pararSomAmbiente();
   verificarMissoes(); verificarConquistas();
 }
 
@@ -600,6 +701,11 @@ function entrarMasmorra(zid) {
   G.ressurgirUsado = false;
   G.ressurgirMascoteUsado = false;
   G.escudoArcanoAtivo = getBonusHabilidades().escudoArcano > 0;
+  G._batalha_campanha = false; // FIX: garantir reset
+  G.momentumAtual = 0; G.momentumCarregado = false;
+
+  iniciarSomAmbiente(zid);
+
   if (!G.zonasVisitadas.includes(zid)) {
     G.zonasVisitadas.push(zid);
     const narr = ZONA_NARRATIVA[zid];
@@ -609,6 +715,7 @@ function entrarMasmorra(zid) {
 }
 
 function continuarMasmorra() {
+  iniciarSomAmbiente(G.masmorraAtual.zonaId);
   if (G.masmorraAtual.andar === 2) mostrarEscolha();
   else iniciarAndar();
 }
@@ -641,8 +748,14 @@ function _iniciarBatalha(zona, iniId) {
   }
   G.inimigo = { ...esc, id: iniId, hp: esc.hpMax };
   G.inBattle = true;
+  G._batalha_campanha = false;
   G.escudoInimigo = false; G.esquivaInimigo = false; G.venenoTurnos = 0;
   G.transcendenciaAtiva = false;
+  G.momentumAtual = 0; G.momentumCarregado = false;
+  // Garante que runStats existe e tem um iniciouEm válido
+  if (!G.runStats) G.runStats = { kills:0, danoTotal:0, feiticosUsados:0, iniciouEm: Date.now() };
+  if (!G.runStats.iniciouEm) G.runStats.iniciouEm = Date.now();
+  G._batalhaIniciadaEm = Date.now(); // timestamp desta batalha específica
   go('s-battle'); renderBattle(); clearLog();
   addLog(`Andar ${G.masmorraAtual?.andar||1}/3 — ${G.inimigo.nome}!`, 'info');
   if (G.inimigo.habilidade) addLog(`⚠️ Habilidade: ${nomeHabilidade(G.inimigo.habilidade)}`, 'warn');
@@ -702,7 +815,7 @@ function processarEscolha(acao) {
       else{notif('❌ MP insuficiente!');G.masmorraAtual._batalhaExtra=true;} break;
     case 'pacto_sombrio':
       G.hp=Math.max(1,G.hpMax-30); G.hpMax=Math.max(50,G.hpMax-30); G.pactoSombrio=true;
-      notif('🌑 Pacto firmado! Próxima batalha: dano dobrado.'); break;
+      notif('🌑 Pacto firmado! Próxima batalha: dano aumentado.'); break;
     case 'ganhar_xp':
       G.xp+=50; notif('📖 +50 XP das runas antigas!'); verificarLevelUp(); break;
     case 'destruir_altar':
@@ -722,7 +835,7 @@ function processarEscolha(acao) {
 }
 
 // ══════════════════════════════════════════
-//  COMBATE
+//  COMBATE — Sistema de Momentum (NOVO)
 // ══════════════════════════════════════════
 function nomeHabilidade(h) {
   const n = {veneno:'Veneno 🐍', dreno_mp:'Drenar Mana 💧', cura:'Cura 💚', escudo:'Escudo 🛡️', esquiva:'Esquiva 💨', reflexo:'Reflexo ✨'};
@@ -735,8 +848,181 @@ function addLog(txt, tipo='neutral') {
   d.scrollTop = d.scrollHeight;
 }
 
+// ── Número flutuante de dano ──
+function mostrarDanoFlutuante(valor, tipo = 'player') {
+  const el = document.getElementById('enemy-box');
+  if (!el) return;
+  const rect = el.getBoundingClientRect();
+  const div = document.createElement('div');
+  div.className = `dmg-float dmg-${tipo}`;
+  div.textContent = tipo === 'cura' ? `+${valor}` : `-${valor}`;
+  // posição aleatória dentro da caixa do inimigo
+  div.style.left = (rect.left + rect.width * (0.3 + Math.random() * 0.4)) + 'px';
+  div.style.top  = (rect.top  + rect.height * 0.2) + 'px';
+  document.body.appendChild(div);
+  setTimeout(() => div.remove(), 950);
+}
+
+// ── Shake no inimigo ──
+function shakeInimigo() {
+  const el = document.getElementById('enemy-box');
+  if (!el) return;
+  el.classList.remove('enemy-hit');
+  void el.offsetWidth; // reflow pra resetar animação
+  el.classList.add('enemy-hit');
+  setTimeout(() => el.classList.remove('enemy-hit'), 400);
+}
+
+// ══════════════════════════════════════════
+//  FASES DE BOSS
+// ══════════════════════════════════════════
+const BOSS_FASES = {
+  voldemort:       { hp: 0.50, art: '🐍💀', buff: { atkMult: 1.35, habilidade: 'reflexo'  }, fala: '«CHEGA! Mostro o meu verdadeiro poder — AVADA KEDAVRA!»' },
+  bellatrix:       { hp: 0.50, art: '🖤🔥', buff: { atkMult: 1.30, habilidade: 'cura'     }, fala: '«Ahhh você me magoou! Isso só me diverte MAIS!»' },
+  basilisco:       { hp: 0.50, art: '🐲☠️', buff: { atkMult: 1.25, habilidade: 'veneno'   }, fala: '«*HISSSSSSS* — O veneno corre MAIS RÁPIDO agora!»' },
+  tom_riddle:      { hp: 0.50, art: '🪬🌑', buff: { atkMult: 1.28, habilidade: 'dreno_mp' }, fala: '«Você é persistente... Que pena que vai morrer assim mesmo.»' },
+  dementor_senhor: { hp: 0.50, art: '💀🌑', buff: { atkMult: 1.30, habilidade: 'dreno_mp' }, fala: '«...o desespero cresce... sua alma já está quase partida...»' },
+  peter_pettigrew: { hp: 0.50, art: '🐀⚡', buff: { atkMult: 1.20, habilidade: 'esquiva'  }, fala: '«N-não! Eu tenho truques ainda! Não me subestime!»' },
+};
+
+function checarFaseBoss() {
+  const ini = G.inimigo;
+  if (!ini || !ini.boss || ini._fase2Ativada) return;
+  const fase = BOSS_FASES[ini.id];
+  if (!fase) return;
+  if (ini.hp / ini.hpMax > fase.hp) return;
+
+  ini._fase2Ativada = true;
+  ini.art = fase.art;
+  ini.atk = [Math.floor(ini.atk[0] * fase.buff.atkMult), Math.floor(ini.atk[1] * fase.buff.atkMult)];
+  ini.habilidade = fase.buff.habilidade;
+
+  addLog(`⚠️ FASE 2 — ${ini.nome} transformou-se!`, 'warn');
+  addLog(`${ini.art} ${fase.fala}`, 'warn');
+  addLog(`💢 Ataque aumentado! Habilidade: ${nomeHabilidade(ini.habilidade)}`, 'warn');
+
+  const el = document.getElementById('enemy-box');
+  if (el) {
+    el.style.transition = 'background .2s';
+    el.style.background = 'rgba(255,0,0,.25)';
+    setTimeout(() => { el.style.background = ''; }, 700);
+  }
+  renderBattle();
+}
+
+// ══════════════════════════════════════════
+//  RANKING DE RUNS
+// ══════════════════════════════════════════
+const RANKING_KEY = 'hogwarts_ranking_v1';
+
+const RANKING_CATS = [
+  { id: 'maiorDano',     label: '🗡️ Maior Dano Único',    campo: 'maiorDano',          fmt: v => v },
+  { id: 'maisKills',     label: '☠️ Mais Kills numa Run',  campo: 'killsRun',           fmt: v => v },
+  { id: 'maiorStreak',   label: '🔥 Maior Streak',         campo: 'streakMax',          fmt: v => v },
+  { id: 'maisOuro',      label: '💰 Mais Ouro Acumulado',  campo: 'ouro',               fmt: v => formatOuro(v) },
+  { id: 'maismasmorras', label: '🏰 Mais Masmorras',       campo: 'masmorrasCompletas', fmt: v => v },
+];
+
+function getRanking() {
+  try { return JSON.parse(localStorage.getItem(RANKING_KEY) || '{}'); } catch(e) { return {}; }
+}
+
+function salvarRanking() {
+  const ranking = getRanking();
+  let novoRecorde = false;
+
+  for (const cat of RANKING_CATS) {
+    const val = cat.campo === 'killsRun'
+      ? (G.runStats?.kills || 0)
+      : (G[cat.campo] || 0);
+
+    if (!ranking[cat.id]) ranking[cat.id] = [];
+
+    const entrada = {
+      val,
+      nome:   G.nomePersonagem || 'Bruxo',
+      casa:   G.casa,
+      nivel:  G.nivel,
+      avatar: getAvatar().emoji,
+      data:   new Date().toLocaleDateString('pt-BR'),
+    };
+
+    ranking[cat.id].push(entrada);
+    ranking[cat.id].sort((a, b) => b.val - a.val);
+    ranking[cat.id] = ranking[cat.id].slice(0, 5);
+
+    const pos = ranking[cat.id].indexOf(entrada);
+    if (pos >= 0 && pos < 3 && entrada.val > 0) novoRecorde = true;
+  }
+
+  try { localStorage.setItem(RANKING_KEY, JSON.stringify(ranking)); } catch(e) {}
+  return novoRecorde;
+}
+
+function renderRanking() {
+  const ranking  = getRanking();
+  const casaIcon = { g:'🦁', s:'🐍', r:'🦅', h:'🦡' };
+  const medalhas = ['🥇','🥈','🥉','4️⃣','5️⃣'];
+
+  let html = '';
+  for (const cat of RANKING_CATS) {
+    const entradas = ranking[cat.id] || [];
+    html += `
+      <div class="ranking-cat">
+        <div class="ranking-cat-label">${cat.label}</div>
+        ${entradas.length === 0
+          ? '<div class="ranking-vazio">Nenhum recorde ainda — seja o primeiro!</div>'
+          : entradas.map((e, i) => `
+            <div class="ranking-row ${i === 0 ? 'ranking-first' : ''}">
+              <span class="ranking-medal">${medalhas[i]}</span>
+              <span class="ranking-avatar">${e.avatar}</span>
+              <div class="ranking-info">
+                <span class="ranking-nome">${e.nome}</span>
+                <span class="ranking-sub">${casaIcon[e.casa]||''} Nv.${e.nivel} · ${e.data}</span>
+              </div>
+              <span class="ranking-val">${cat.fmt(e.val)}</span>
+            </div>`).join('')}
+      </div>`;
+  }
+
+  document.getElementById('ranking-content').innerHTML = html;
+}
+
+// Renderiza barra de momentum
+function renderMomentumBar() {
+  const m = G.momentumAtual || 0;
+  const dots = [0,1,2].map(i => {
+    const filled = i < m;
+    const classes = filled ? 'momentum-dot filled' : 'momentum-dot';
+    return `<div class="${classes}"></div>`;
+  }).join('');
+  const ready = G.momentumCarregado;
+  return `
+    <div class="momentum-bar ${ready ? 'momentum-ready' : ''}">
+      <div class="momentum-label">${ready ? '⚡ MOMENTUM!' : '💫 Momentum'}</div>
+      <div class="momentum-dots">${dots}</div>
+      ${ready ? '<button class="btn momentum-btn" onclick="usarMomentum()">Liberar</button>' : ''}
+    </div>`;
+}
+
+function usarMomentum() {
+  if (!G.momentumCarregado) return;
+  G.momentumCarregado = false;
+  G.momentumAtual = 0;
+
+  // Efeito do momentum: cura + dano extra no próximo ataque
+  const cura = Math.floor(G.hpMax * 0.15);
+  G.hp = Math.min(G.hpMax, G.hp + cura);
+  G.buffDanoUmaBatalha = (G.buffDanoUmaBatalha || 0) + 0.50;
+
+  tocarSom('momentum');
+  addLog(`⚡ MOMENTUM LIBERADO! +${cura} HP | Próximo feitiço +50% dano!`, 'info');
+  renderBattle();
+}
+
 function renderBattle() {
   const ini = G.inimigo;
+  if (!ini) return;
   const hpPct = Math.max(0, Math.round(ini.hp/ini.hpMax*100));
   const veneno = G.venenoTurnos > 0 ? `<span class="status-icon">☠️${G.venenoTurnos}</span>` : '';
   const escudo = G.escudoInimigo ? `<span class="status-icon">🛡️</span>` : '';
@@ -746,25 +1032,37 @@ function renderBattle() {
 
   document.getElementById('status-battle').innerHTML = statusHTML();
 
-  const frenesiTxt = G.frenesiStacks > 0
-    ? `<div style="font-size:10px;color:#ff9040;margin-top:3px">🔥 Frenesi x${G.frenesiStacks} (+${G.frenesiStacks*3}% dano)</div>` : '';
-  const pactoTxt   = G.pactoSombrio
-    ? `<div style="font-size:10px;color:#9b59b6;margin-top:3px">🌑 Pacto Sombrio (dano 2x)</div>` : '';
-  const transcTxt  = G.transcendenciaAtiva
-    ? `<div style="font-size:10px;color:#ffd700;margin-top:3px">✨ Imunidade ativa</div>` : '';
-  const masTxt     = mas
-    ? `<div style="font-size:10px;opacity:.55;margin-top:3px">${mas.emoji} ${mas.nome}</div>` : '';
+  // ── Passivas ativas (UX: jogador sempre sabe o estado) ──
+  const buffs = [];
+  if (G.frenesiStacks > 0)    buffs.push(`<span class="buff-chip buff-fire">🔥 Frenesi x${G.frenesiStacks}/${bonus.frenesiCap} <em>+${G.frenesiStacks*3}%</em></span>`);
+  if (G.pactoSombrio)          buffs.push(`<span class="buff-chip buff-dark">🌑 Pacto Sombrio <em>+60% próx.</em></span>`);
+  if (G.transcendenciaAtiva)   buffs.push(`<span class="buff-chip buff-gold">✨ Imunidade ativa</span>`);
+  if (G.escudoArcanoAtivo)     buffs.push(`<span class="buff-chip buff-blue">🛡️ Escudo Arcano <em>${bonus.escudoArcano} absorção</em></span>`);
+  if (G.momentumCarregado)     buffs.push(`<span class="buff-chip buff-gold">⚡ Momentum carregado!</span>`);
+  if (G.buffDanoUmaBatalha > 0)buffs.push(`<span class="buff-chip buff-fire">💥 +${Math.round(G.buffDanoUmaBatalha*100)}% próx. ataque</span>`);
+  if (bonus.ressurgir && !G.ressurgirUsado) buffs.push(`<span class="buff-chip buff-green">♻️ Ressurgir disponível</span>`);
+  if (mas && !G.ressurgirMascoteUsado && bonus.ressurgirMascote > 0) buffs.push(`<span class="buff-chip buff-green">${mas.emoji} Fênix disponível</span>`);
+  if (G.venenoTurnos > 0)      buffs.push(`<span class="buff-chip buff-bad">☠️ Envenenado x${G.venenoTurnos}</span>`);
 
   document.getElementById('enemy-box').innerHTML=`
+    ${ini._fase2Ativada ? '<div class="fase2-banner">⚠️ FASE 2 — PODER MÁXIMO</div>' : ''}
     <div class="enemy-art">${ini.art}</div>
-    <div class="enemy-name">${ini.nome}${ini.boss?' <span style="font-size:11px;opacity:.6">👑</span>':''}</div>
-    <div style="font-size:11px;opacity:.6;margin:3px 0">HP: ${ini.hp}/${ini.hpMax} ${escudo}</div>
-    <div class="bar-wrap" style="max-width:180px;margin:0 auto"><div class="bar-fill bar-hp" style="width:${hpPct}%"></div></div>
+    <div class="enemy-name">${ini.nome}${ini.boss?' <span class="boss-crown">👑</span>':''}</div>
+    <div class="enemy-hp-text">HP: ${ini.hp}/${ini.hpMax} ${escudo}</div>
+    <div class="enemy-hp-bar"><div class="enemy-hp-fill" style="width:${hpPct}%;background:${hpPct>50?'#e74c3c':hpPct>25?'#e67e22':'#c0392b'}"></div></div>
     ${veneno ? `<div style="font-size:10px;margin-top:4px">${veneno}</div>` : ''}`;
 
-  document.getElementById('battle-buffs').innerHTML = frenesiTxt + pactoTxt + transcTxt + masTxt;
+  document.getElementById('battle-buffs').innerHTML = buffs.length
+    ? `<div class="buffs-row">${buffs.join('')}</div>` : '';
+
+  // Renderiza barra de momentum
+  const momentumEl = document.getElementById('momentum-bar-wrap');
+  if (momentumEl) momentumEl.innerHTML = renderMomentumBar();
 
   const todos = getTodosFeiticos();
+  // Melhor feitiço atual (para comparativo na loja)
+  const maxDanoAtual = Math.max(...todos.map(f => f.dano[1] + (f.id==='__basico__'?0:G.bonusDmg)));
+
   document.getElementById('spells').innerHTML = todos.map((f, i) => {
     const podeUsar = G.mp >= f.mp;
     const isLearn  = G.magicsAprendidas.includes(f.id);
@@ -779,16 +1077,18 @@ function renderBattle() {
         dMax = Math.floor(dMax * (1 + G.frenesiStacks * 0.03));
       }
       if (G.buffDanoUmaBatalha > 0) { dMin=Math.floor(dMin*(1+G.buffDanoUmaBatalha)); dMax=Math.floor(dMax*(1+G.buffDanoUmaBatalha)); }
-      if (G.pactoSombrio) { dMin*=2; dMax*=2; }
+      if (G.pactoSombrio) { dMin=Math.floor(dMin*bonus.pactoMult); dMax=Math.floor(dMax*bonus.pactoMult); }
     }
-    const varinhaStyle = !isLearn && !isBasico ? `border-color:${vr.hex}25;` : '';
+    const varinhaStyle = !isLearn && !isBasico ? `border-color:${vr.hex}40;` : '';
     const manaSurge = bonus.manaSurgePct > 0 && f.mp > 30 ? ' 🌀' : '';
+    const mpPct = f.mp === 0 ? 0 : Math.round((f.mp / G.mpMax) * 100);
     return `
       <button class="spell-btn ${isLearn?'spell-learned':''} ${isBasico?'spell-basico':''}"
         style="${varinhaStyle}" onclick="lancarFeitico(${i})" ${!podeUsar?'disabled':''}>
-        <div style="font-size:16px">${f.icon}</div>
+        <div class="spell-icon">${f.icon}</div>
         <div class="spell-name">${f.nome}${manaSurge}</div>
-        <div class="spell-cost">${f.mp===0?'Grátis':'MP:'+f.mp} | ${dMin}–${dMax}</div>
+        <div class="spell-cost">${f.mp===0?'Grátis':'⚡'+f.mp} · ${dMin}–${dMax}</div>
+        ${f.mp>0?`<div class="spell-mp-bar"><div class="spell-mp-fill" style="width:${Math.min(100,mpPct)}%;opacity:${podeUsar?1:.4}"></div></div>`:''}
       </button>`;
   }).join('');
 }
@@ -806,23 +1106,30 @@ function lancarFeitico(idx) {
   const critico  = Math.random() < G.chanceCritico;
   let dmg = fRand(f.dano[0], f.dano[1]) + G.bonusDmg;
 
+  // Tracking de run stats
+  if (!G.runStats) G.runStats = { kills:0, danoTotal:0, feiticosUsados:0, iniciouEm: Date.now() };
+  G.runStats.feiticosUsados++;
+
   if (!isBasico) {
     dmg = Math.floor(dmg * (1 + bonus.danoPct));
     if (bonus.manaSurgePct > 0 && f.mp > 30) dmg = Math.floor(dmg * (1 + bonus.manaSurgePct));
     if (G.frenesiStacks > 0) dmg = Math.floor(dmg * (1 + G.frenesiStacks * 0.03));
     if (G.buffDanoUmaBatalha > 0) { dmg = Math.floor(dmg * (1 + G.buffDanoUmaBatalha)); G.buffDanoUmaBatalha = 0; }
-    if (G.pactoSombrio) { dmg *= 2; G.pactoSombrio = false; }
+    // FIX: Pacto usa multiplicador balanceado (1.6x, não 2x)
+    if (G.pactoSombrio) { dmg = Math.floor(dmg * bonus.pactoMult); G.pactoSombrio = false; }
   }
 
-  // Colapso arcano: +60% em inimigos com <25% HP
+  // Colapso arcano: +50% em inimigos com <25% HP (balanceado de 60%)
   if (bonus.colapso > 0 && G.inimigo.hp < G.inimigo.hpMax * 0.25) dmg = Math.floor(dmg * (1 + bonus.colapso));
 
   if (critico) { dmg = Math.floor(dmg * bonus.criticoMult); G.criticosTotal++; }
 
+  G.runStats.danoTotal = (G.runStats.danoTotal || 0) + dmg;
+
   // Passivas de roubo de vida
-  if (G.casa === 's' && !isBasico) G.hp = Math.min(G.hpMax, G.hp + 4);
-  if (bonus.vampirismoPct > 0 && !isBasico) G.hp = Math.min(G.hpMax, G.hp + Math.floor(dmg * bonus.vampirismoPct));
-  if (bonus.drenoBonus > 0 && !isBasico)    G.hp = Math.min(G.hpMax, G.hp + bonus.drenoBonus);
+  if (G.casa === 's' && !isBasico) { G.hp = Math.min(G.hpMax, G.hp + 4); mostrarDanoFlutuante(4, 'cura'); }
+  if (bonus.vampirismoPct > 0 && !isBasico) { const v=Math.floor(dmg * bonus.vampirismoPct); G.hp = Math.min(G.hpMax, G.hp + v); if(v>0) mostrarDanoFlutuante(v,'cura'); }
+  if (bonus.drenoBonus > 0 && !isBasico)    { G.hp = Math.min(G.hpMax, G.hp + bonus.drenoBonus); mostrarDanoFlutuante(bonus.drenoBonus,'cura'); }
 
   // Escudo inimigo
   if (G.escudoInimigo) { dmg = Math.floor(dmg * 0.5); G.escudoInimigo = false; addLog('🛡️ Escudo absorveu!', 'warn'); }
@@ -841,9 +1148,26 @@ function lancarFeitico(idx) {
   if (dmg > (G.maiorDano || 0)) G.maiorDano = dmg;
 
   tocarSom(critico ? 'critico' : 'ataque');
+  shakeInimigo();
+  mostrarDanoFlutuante(dmg, critico ? 'critico' : 'player');
   addLog(`${f.icon} ${f.nome}: ${dmg} de dano!${critico ? ` 💫 CRÍTICO!(x${bonus.criticoMult})` : ''}`, 'good');
 
+  // ── Fase 2 do boss (50% HP) ──
+  checarFaseBoss();
+
   if (dmgReflexo > 0) { G.hp = Math.max(0, G.hp - dmgReflexo); addLog(`✨ Reflexo: ${dmgReflexo} de volta!`, 'bad'); }
+
+  // Sistema de Momentum: 3 feitiços não-básicos seguidos carrega
+  if (!isBasico) {
+    G.momentumAtual = Math.min(3, (G.momentumAtual || 0) + 1);
+    if (G.momentumAtual >= 3 && !G.momentumCarregado) {
+      G.momentumCarregado = true;
+      tocarSom('momentum');
+      addLog('⚡ MOMENTUM CARREGADO! Use o poder acumulado!', 'info');
+    }
+  } else {
+    // Ataque básico não conta para momentum mas não reseta
+  }
 
   if (G.inimigo.hp <= 0) { vencerBatalha(); return; }
 
@@ -871,7 +1195,7 @@ function ataqueInimigo() {
 
   if (bonus.dmgReducPct > 0) dmg = Math.floor(dmg * (1 - bonus.dmgReducPct));
 
-  // Escudo arcano — absorve primeiro hit da batalha
+  // Escudo arcano
   if (G.escudoArcanoAtivo) {
     const absorvido = Math.min(dmg, bonus.escudoArcano);
     dmg = Math.max(0, dmg - absorvido);
@@ -888,6 +1212,12 @@ function ataqueInimigo() {
   addLog(`${ini.art} ${ini.nome} causou ${dmg} de dano!`, 'bad');
   tocarSom('dano');
 
+  // Momentum diminui só se dano efetivo foi recebido (FIX: escudo total não reseta)
+  const danoEfetivo = dmg; // dmg já foi reduzido pelo escudo antes
+  if (danoEfetivo > 0 && !G.momentumCarregado) {
+    G.momentumAtual = Math.max(0, (G.momentumAtual || 0) - 1);
+  }
+
   if (G.venenoTurnos > 0) {
     G.hp = Math.max(0, G.hp - G.venenaoDano);
     G.venenoTurnos--;
@@ -897,18 +1227,13 @@ function ataqueInimigo() {
   // Regen MP por turno
   G.mp = Math.min(G.mpMax, G.mp + 5 + bonus.mpRegenExtra);
 
-  // Eterno — HP e MP não caem abaixo de 1
-  if (bonus.eterno) { G.hp = Math.max(1, G.hp); G.mp = Math.max(1, G.mp); }
-
   renderBattle();
 
   if (G.hp <= 0) {
-    // Ressurgir pela habilidade da árvore
     if (bonus.ressurgir && !G.ressurgirUsado) {
       G.ressurgirUsado = true; G.hp = 30;
       addLog(`♻️ Ressurgir! Você voltou com 30 HP!`, 'info');
       renderBattle();
-    // Ressurgir pelo mascote Fênix
     } else if (bonus.ressurgirMascote > 0 && !G.ressurgirMascoteUsado) {
       G.ressurgirMascoteUsado = true; G.hp = bonus.ressurgirMascote;
       addLog(`🕊️ Fênix! Seu mascote te trouxe de volta com ${bonus.ressurgirMascote} HP!`, 'info');
@@ -929,58 +1254,69 @@ function aplicarHabilidadeInimigo(hab) {
 }
 
 function verificarLevelUp() {
-  const MAX_NIVEL = 70;  // 🆕 LIMITE ADICIONADO
+  const MAX_NIVEL = 70;
   let ups = 0;
-  
+
   while (G.xp >= G.xpNext && G.nivel < MAX_NIVEL) {
-    G.xp -= G.xpNext; 
+    G.xp -= G.xpNext;
     G.nivel++;
     G.xpNext = Math.floor(G.nivel * 120);
     G.hpMax += 20; G.hp = G.hpMax;
     G.mpMax += 10; G.mp = G.mpMax;
-    ups++; 
-    tocarSom('levelup');
-    
-    // Eventos especiais
+    ups++; tocarSom('levelup');
+
     if ([5,10,20,30,50,70].includes(G.nivel)) {
       adicionarDiario('nivel_'+G.nivel);
       if (G.nivel === 70) {
         notif('🏆 NÍVEL MÁXIMO 70 ATINGIDO! 👑');
-        adicionarDiario('nivel_max');
-        verificarConquistas(); // Nova conquista automática
+        verificarConquistas();
       }
     }
   }
-  
-  // 🆕 MENSAGEM quando bater no teto
+
   if (G.nivel >= MAX_NIVEL && G.xp >= G.xpNext) {
     notif('⚔️ Nível 70 é o ápice da magia! XP extra convertido em ouro.');
-    // Converter XP excedente em ouro (1:10)
     const xpExtra = G.xp - G.xpNext;
     const ouroBonus = Math.floor(xpExtra * 0.1);
     G.ouro += ouroBonus;
-    G.xp = 0; // Reset XP para não acumular
+    G.xp = 0;
     saveGame();
   }
-  
+
   return ups;
 }
 
 function vencerBatalha() {
+  // FIX: checar campanha ANTES de qualquer coisa, não usar patch externo
+  if (G._batalha_campanha) {
+    G._batalha_campanha = false;
+    if (typeof vitoriaBatalhaCampanha === 'function') vitoriaBatalhaCampanha();
+    return;
+  }
+
   const ini = G.inimigo;
   G.killsTotal++; G.killsBoss += (ini.boss ? 1 : 0);
   G.killsPorTipo[ini.id] = (G.killsPorTipo[ini.id] || 0) + 1;
   G.totalBatalhas++; G.streakAtual++;
   if (G.streakAtual > (G.streakMax || 0)) G.streakMax = G.streakAtual;
+  if (!G.runStats) G.runStats = { kills:0, danoTotal:0, feiticosUsados:0, iniciouEm: Date.now() };
+  G.runStats.kills++;
   tocarSom('vitoria');
+  _invalidarBonusCache();
 
-  // Passiva Gryffindor
   if (G.casa === 'g') { G.hp = Math.min(G.hpMax, G.hp + 8); addLog(`❤️‍🔥 Adrenalina! +8 HP`, 'good'); }
 
-  // Frenesi (3% por stack, rebalanceado)
-  if (getBonusHabilidades().frenesissi) G.frenesiStacks++;
-
+  // FIX: Frenesi tem cap de stacks
   const bonus = getBonusHabilidades();
+  if (bonus.frenesissi && G.frenesiStacks < bonus.frenesiCap) G.frenesiStacks++;
+
+  // Ressurgência: cura para 50% HP ao vencer com HP baixo
+  if (bonus.ressurgencia > 0 && G.hp > 0 && G.hp < G.hpMax * 0.20) {
+    const cura = Math.floor(G.hpMax * bonus.ressurgencia);
+    G.hp = Math.min(G.hpMax, G.hp + cura);
+    addLog(`🔱 Ressurgência! Recuperou ${cura} HP`, 'good');
+  }
+
   let xpGanho   = Math.floor(ini.xp * xpBoostAtivo() * (1 + bonus.xpPctBonus));
   let ouroGanho = ini.ouro;
   if (G.casa === 'h') ouroGanho = Math.floor(ouroGanho * 1.25);
@@ -988,6 +1324,7 @@ function vencerBatalha() {
   if (G.masmorraAtual?._bonusOuro) { ouroGanho = Math.floor(ouroGanho * (1 + G.masmorraAtual._bonusOuro)); G.masmorraAtual._bonusOuro = 0; }
 
   G.xp += xpGanho; G.ouro += ouroGanho; G.inBattle = false;
+  G.momentumAtual = 0; G.momentumCarregado = false;
   addLog(`🏆 +${xpGanho} XP | +${ouroGanho} 🪙`, 'info');
 
   const levelUps = verificarLevelUp();
@@ -1021,7 +1358,12 @@ function concluirMasmorra(ini, xpGanho, ouroGanho, levelUps) {
   const perfeita = G.masmorraAtual.semDano;
   G.masmorraAtual = null;
   G.frenesiStacks = 0;
-  verificarMissoes(); verificarConquistas(); saveGame();
+  G.momentumAtual = 0; G.momentumCarregado = false;
+  verificarMissoes(); verificarConquistas();
+  const novoRecordeMasm = salvarRanking();
+  if (novoRecordeMasm) setTimeout(() => notif('🏅 Novo Recorde! Confira o Ranking!'), 1200);
+  saveGame();
+  pararSomAmbiente();
   if (ini.boss && BOSS_FALAS[ini.id]) {
     setTimeout(() => mostrarNarrativa(BOSS_FALAS[ini.id].art+' Última Fala', BOSS_FALAS[ini.id].fala, () => {
       irParaMasmorraVitoria(ini, xpGanho+bonusXP, ouroGanho+bonusOuro, levelUps, perfeita);
@@ -1053,21 +1395,105 @@ function irParaMasmorraVitoria(ini, xpGanho, ouroGanho, levelUps, perfeita) {
     <button class="btn btn-center" style="margin-top:.3rem;font-size:11px;opacity:.7" onclick="go('s-diario');renderDiario()">📓 Ver Diário</button>`;
 }
 
+// ══════════════════════════════════════════
+//  GAME OVER — Tela Rica (MELHORIA)
+// ══════════════════════════════════════════
 function gameOver() {
   G.inBattle = false; G.derrotas++; G.streakAtual = 0; G.frenesiStacks = 0;
+  G._batalha_campanha = false;
+  G.momentumAtual = 0; G.momentumCarregado = false;
+
+  // Captura antes de qualquer reset
+  const iniNome = G.inimigo?.nome || 'um inimigo';
+  const rs = G.runStats || { kills:0, danoTotal:0, feiticosUsados:0, iniciouEm: Date.now() };
+  const inicioRun = rs.iniciouEm || G._batalhaIniciadaEm || Date.now();
+  const tempoRun = formatTempo(Date.now() - inicioRun);
+  const zona = ZONAS.find(z => z.id === G.masmorraAtual?.zonaId);
+  const titulo = getTitulo();
+  const av = getAvatar();
+
   if (G.masmorraAtual) { G.masmorraAtual.andar = 1; G.masmorraAtual.semDano = false; }
+
   go('s-gameover');
-  document.getElementById('go-msg').textContent = `Você foi derrotado por ${G.inimigo.nome}. A masmorra recomeça do início...`;
+
+  document.getElementById('go-content').innerHTML = `
+    <div class="gameover-header">
+      <div class="gameover-art">💀</div>
+      <div class="gameover-titulo">DERROTADO</div>
+      <div class="gameover-sub">
+        ${av.emoji} ${G.nomePersonagem} foi derrotado por <strong>${iniNome}</strong>
+        ${zona ? `em ${zona.nome}` : ''}.
+      </div>
+    </div>
+
+    <div class="gameover-run-stats">
+      <div class="go-stat-label">📊 Esta Run</div>
+      <div class="go-stats-grid">
+        <div class="go-stat">
+          <div class="go-stat-val">${rs.kills || 0}</div>
+          <div class="go-stat-name">Inimigos</div>
+        </div>
+        <div class="go-stat">
+          <div class="go-stat-val">${formatOuro(rs.danoTotal || 0)}</div>
+          <div class="go-stat-name">Dano Total</div>
+        </div>
+        <div class="go-stat">
+          <div class="go-stat-val">${rs.feiticosUsados || 0}</div>
+          <div class="go-stat-name">Feitiços</div>
+        </div>
+        <div class="go-stat">
+          <div class="go-stat-val">${tempoRun}</div>
+          <div class="go-stat-name">Tempo</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="gameover-totals">
+      <div class="go-stat-label">🏰 Total Acumulado</div>
+      <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:.5rem">
+        <span class="go-total-chip">Nível ${G.nivel} ${titulo.icon}</span>
+        <span class="go-total-chip">${G.killsTotal} mortos</span>
+        <span class="go-total-chip">${G.killsBoss} bosses</span>
+        <span class="go-total-chip">${G.masmorrasCompletas} masmorras</span>
+        <span class="go-total-chip">🪙 ${formatOuro(G.ouro)}</span>
+        <span class="go-total-chip">${G.derrotas}ª derrota</span>
+      </div>
+    </div>
+
+    ${G.masmorraAtual ? `
+      <div class="go-restart-info">
+        ↩️ A masmorra recomeça do Andar 1.
+      </div>` : ''}
+
+    <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:1.2rem">
+      <button class="btn btn-gold" onclick="restartRpg()">⚔️ Tentar Novamente</button>
+      <button class="btn" onclick="go('s-inv');renderInv()">🧪 Ver Itens</button>
+      <button class="btn btn-danger" onclick="go('s-intro');resetAll()" style="font-size:10px;opacity:.6">Novo Jogo</button>
+    </div>
+  `;
+
   saveGame();
+  const novoRecorde = salvarRanking();
+  if (novoRecorde) setTimeout(() => notif('🏅 Novo Recorde! Confira o Ranking!'), 800);
+  G.runStats = { kills:0, danoTotal:0, feiticosUsados:0, iniciouEm: Date.now() };
+  G._batalhaIniciadaEm = null;
 }
 
 function tryFlee() {
-  if (Math.random() < 0.5) {
-    addLog('Você fugiu!', 'info'); G.inBattle = false; G.streakAtual = 0;
+  const hpPct = G.hp / G.hpMax;
+  // Chance de fuga base 50%, +10% se HP < 30%
+  const chanceFuga = hpPct < 0.30 ? 0.60 : 0.50;
+  const chancePct = Math.round(chanceFuga * 100);
+  if (Math.random() < chanceFuga) {
+    addLog(`🏃 Fuga bem-sucedida! (${chancePct}% de chance)`, 'info');
+    G.inBattle = false; G.streakAtual = 0;
+    G.momentumAtual = 0; G.momentumCarregado = false;
+    G._batalha_campanha = false;
     if (G.masmorraAtual) G.masmorraAtual.andar = 1;
     setTimeout(() => { go('s-map'); renderMap(); }, 700);
   } else {
-    addLog('Não conseguiu fugir!', 'bad'); ataqueInimigo();
+    addLog(`Fuga falhou! (${chancePct}% de chance — tente novamente)`, 'bad');
+    ataqueInimigo();
   }
 }
 
@@ -1091,7 +1517,6 @@ function aprenderHabilidade(id, tier) {
   const hab = ARVORE_HABILIDADES[tier]?.find(h => h.id === id);
   if (!hab) return;
   G.habilidadesAprendidas.push(id);
-  // Aplicar efeitos permanentes imediatos (valores rebalanceados)
   if (id === 'resistencia') { G.hpMax += 20; G.hp = Math.min(G.hp + 20, G.hpMax); }
   if (id === 'lendario')    { G.hpMax += 30; G.hp = Math.min(G.hp + 30, G.hpMax); G.mpMax += 15; G.mp = Math.min(G.mp + 15, G.mpMax); }
   if (id === 'devastacao')  { G.hpMax = Math.max(50, G.hpMax - 12); G.hp = Math.min(G.hp, G.hpMax); }
@@ -1112,6 +1537,17 @@ function adicionarDiario(chave) {
   G.diario.push({ chave, texto, nivel: G.nivel, data: Date.now() });
 }
 
+// MELHORIA: Diário personalizado referencia escolhas da campanha
+function adicionarDiarioPersonalizado(texto) {
+  G.diario.push({
+    chave: 'custom_' + Date.now(),
+    texto,
+    nivel: G.nivel,
+    data: Date.now(),
+    personalizado: true
+  });
+}
+
 function renderDiario() {
   if (!G.diario || G.diario.length === 0) {
     document.getElementById('diario-lista').innerHTML = '<p style="opacity:.5;font-style:italic;text-align:center">Nenhuma entrada ainda.<br>Continue sua aventura...</p>';
@@ -1119,8 +1555,8 @@ function renderDiario() {
   }
   const av = getAvatar();
   document.getElementById('diario-lista').innerHTML = [...G.diario].reverse().map(d=>`
-    <div class="diario-entry">
-      <div class="diario-nivel">${av.emoji} Nível ${d.nivel}</div>
+    <div class="diario-entry ${d.personalizado ? 'diario-personalizado' : ''}">
+      <div class="diario-nivel">${av.emoji} Nível ${d.nivel}${d.personalizado ? ' · 📖 Campanha' : ''}</div>
       <div class="diario-texto">"${d.texto}"</div>
     </div>`).join('');
 }
@@ -1136,7 +1572,12 @@ function mostrarModal(titulo, msg) {
   document.getElementById('modal-evento').style.display = 'flex';
 }
 
-function fecharModal() { document.getElementById('modal-evento').style.display = 'none'; }
+function fecharModal() {
+  document.getElementById('modal-evento').style.display = 'none';
+  // Remove botões extras que possam ter sido adicionados
+  const extras = document.querySelectorAll('.modal-box .btn-extra-confirm');
+  extras.forEach(e => e.remove());
+}
 
 function mostrarNarrativa(titulo, texto, callback) {
   document.getElementById('modal-titulo').textContent = titulo;
@@ -1159,14 +1600,55 @@ function dispararEventoAleatorio() {
 }
 
 // ══════════════════════════════════════════
-//  INVENTÁRIO
+//  INVENTÁRIO COM SLOTS VISUAIS (MELHORIA)
 // ══════════════════════════════════════════
 function renderInv() {
   document.getElementById('status-inv').innerHTML = statusHTML();
+
+  const vr = getVarinha();
+  const cla = getCla();
+  const mas = getMascote();
+  const varinhaAtual = G.bonusDmg > 0 ? `+${G.bonusDmg} dano` : 'Nenhuma';
+
+  // Slots de equipamento visual
+  const equipHTML = `
+    <div class="equip-slots">
+      <div class="equip-slot-label">⚔️ Equipamentos</div>
+      <div class="equip-slots-row">
+        <div class="equip-slot ${G.bonusDmg > 0 ? 'equip-slot-filled' : ''}">
+          <div class="equip-slot-icon">🪄</div>
+          <div class="equip-slot-name">Varinha</div>
+          <div class="equip-slot-val" style="color:${vr.hex}">${vr.nome}</div>
+          <div class="equip-slot-bonus">${varinhaAtual}</div>
+        </div>
+        <div class="equip-slot ${cla ? 'equip-slot-filled' : ''}">
+          <div class="equip-slot-icon">${cla ? cla.icon : '❓'}</div>
+          <div class="equip-slot-name">Família</div>
+          <div class="equip-slot-val" style="color:${cla?.cor || 'inherit'}">${cla?.nome || 'Nenhuma'}</div>
+          <div class="equip-slot-bonus">${cla?.raridade || '—'}</div>
+        </div>
+        <div class="equip-slot ${mas ? 'equip-slot-filled' : ''}">
+          <div class="equip-slot-icon">${mas ? mas.emoji : '❓'}</div>
+          <div class="equip-slot-name">Mascote</div>
+          <div class="equip-slot-val">${mas?.nome || 'Nenhum'}</div>
+          <div class="equip-slot-bonus">${mas?.desc || '—'}</div>
+        </div>
+        <div class="equip-slot ${G.permanentesComprados?.escudo ? 'equip-slot-filled' : ''}">
+          <div class="equip-slot-icon">🔰</div>
+          <div class="equip-slot-name">Amuleto</div>
+          <div class="equip-slot-val">${G.permanentesComprados?.escudo ? 'Protetor' : 'Vazio'}</div>
+          <div class="equip-slot-bonus">${G.permanentesComprados?.escudo ? '+15 HP' : '—'}</div>
+        </div>
+      </div>
+    </div>`;
+
   const itens = G.inv.filter(i => i.qtd > 0);
-  document.getElementById('inv-items').innerHTML = itens.length
-    ? itens.map(it=>`<button class="item-card" onclick="usarItem('${it.id}')">${it.icon} ${it.nome} x${it.qtd}<br><span style="font-size:10px;opacity:.6">${it.desc}</span></button>`).join('')
+  const itensHTML = itens.length
+    ? `<div class="inv-section-label">🎒 Consumíveis</div>
+       <div class="inv-grid">${itens.map(it=>`<button class="item-card" onclick="usarItem('${it.id}')">${it.icon} ${it.nome} x${it.qtd}<br><span style="font-size:10px;opacity:.6">${it.desc}</span></button>`).join('')}</div>`
     : '<p style="opacity:.5;font-style:italic">Inventário vazio.</p>';
+
+  document.getElementById('inv-items').innerHTML = equipHTML + itensHTML;
 }
 
 function usarItem(id) {
@@ -1290,8 +1772,14 @@ function renderMagicShop() {
 function rowMagiaHTML(m, d = 1.0) {
   const ap = G.magicsAprendidas.includes(m.id), p = Math.floor(m.preco * d), sem = G.ouro < p;
   const badge = ap ? `<span class="badge badge-learned">Aprendida</span>` : '';
+  // Comparativo: melhor feitiço atual do jogador
+  const todos = getTodosFeiticos();
+  const melhorAtual = Math.max(...todos.map(f => f.dano[1] + (f.id==='__basico__'?0:G.bonusDmg)));
+  const delta = m.dano[1] - melhorAtual;
+  const deltaHTML = !ap && delta !== 0
+    ? `<span class="spell-delta ${delta>0?'delta-pos':'delta-neg'}">${delta>0?'+':''}${delta} dano máx</span>` : '';
   return `<div class="shop-row">
-    <div class="shop-row-info">${m.icon} <strong>${m.nome}</strong>${badge}<br><span style="font-size:11px;opacity:.6">${m.dano[0]}–${m.dano[1]} dano | MP:${m.mp} — ${m.desc}</span></div>
+    <div class="shop-row-info">${m.icon} <strong>${m.nome}</strong>${badge} ${deltaHTML}<br><span style="font-size:11px;opacity:.6">${m.dano[0]}–${m.dano[1]} dano · MP ${m.mp} · ${m.desc}</span></div>
     <button class="btn" style="padding:5px 11px;font-size:11px;white-space:nowrap" onclick="aprenderMagia('${m.id}')" ${ap||sem?'disabled':''}>${ap?'✓':'🪙'+formatOuro(p)}</button>
   </div>`;
 }
@@ -1365,20 +1853,37 @@ function getProgressoMissao(m) {
 }
 
 function renderMissoes() {
+  const completas = G.missoesCompletas.length;
+  const total = MISSOES_DEF.length;
+  const hdr = document.getElementById('missoes-header');
+  if (hdr) hdr.innerHTML = `
+    <span>Progresso: <strong>${completas}/${total}</strong> concluídas</span>
+    <div style="display:flex;gap:4px;align-items:center">
+      ${Array.from({length:total}, (_,i) =>
+        `<div style="width:6px;height:6px;border-radius:50%;background:${i<completas?'#7dff9a':'rgba(255,255,255,.2)'}"></div>`
+      ).join('')}
+    </div>`;
   document.getElementById('missoes-lista').innerHTML = MISSOES_DEF.map(m => {
     const ok   = G.missoesCompletas.includes(m.id);
     const prog = getProgressoMissao(m);
     const pct  = Math.min(100, Math.floor(prog / m.alvo * 100));
-    return `<div class="missao-card ${ok?'missao-completa':''}">
-      <div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.3rem">
-        <span style="font-size:18px">${m.icon}</span>
-        <div><div style="font-family:'Cinzel',serif;font-size:12px">${m.nome} ${ok?'✅':''}</div><div style="font-size:11px;opacity:.6">${m.desc}</div></div>
+    return `<div class="missao-card ${ok?'missao-completa':''}" style="margin-bottom:8px">
+      <div style="display:flex;align-items:center;gap:.6rem;margin-bottom:.4rem">
+        <span style="font-size:20px;filter:${ok?'none':'grayscale(1) opacity(.5)'}">${m.icon}</span>
+        <div style="flex:1">
+          <div style="font-family:'Cinzel',serif;font-size:12px;display:flex;align-items:center;gap:.4rem">
+            ${m.nome}
+            ${ok ? '<span style="font-size:10px;background:rgba(125,255,154,.15);border:1px solid rgba(125,255,154,.3);color:#7dff9a;padding:1px 6px;border-radius:8px;font-family:\'Cinzel\',serif">CONCLUÍDA</span>' : ''}
+          </div>
+          <div style="font-size:11px;opacity:.6;margin-top:1px">${m.desc}</div>
+        </div>
+        ${ok ? `<div style="font-size:10px;opacity:.5;text-align:right;white-space:nowrap">🪙${m.recompensa.ouro}${m.recompensa.xp>0?' +'+m.recompensa.xp+'⭐':''}</div>` : ''}
       </div>
       <div style="display:flex;align-items:center;gap:.5rem">
-        <div class="bar-wrap" style="flex:1;height:6px"><div class="bar-fill" style="width:${pct}%;background:${ok?'#7dff9a':'#ffd07d'}"></div></div>
-        <span style="font-size:10px;opacity:.6">${Math.min(prog,m.alvo)}/${m.alvo}</span>
+        <div class="bar-wrap" style="flex:1;height:5px"><div class="bar-fill" style="width:${pct}%;background:${ok?'#7dff9a':'#ffd07d'};transition:width .4s"></div></div>
+        <span style="font-size:10px;opacity:.55;min-width:40px;text-align:right">${Math.min(prog,m.alvo)}/${m.alvo}</span>
       </div>
-      ${ok ? '' : `<div style="font-size:10px;opacity:.5;margin-top:3px">🪙${m.recompensa.ouro}${m.recompensa.xp>0?' +'+m.recompensa.xp+'⭐':''}</div>`}
+      ${!ok ? `<div style="font-size:10px;opacity:.45;margin-top:4px">Recompensa: 🪙${m.recompensa.ouro}${m.recompensa.xp>0?' · '+m.recompensa.xp+' ⭐':''}</div>` : ''}
     </div>`;
   }).join('');
 }
@@ -1395,11 +1900,21 @@ function verificarMissoes() {
 }
 
 function renderConquistas() {
+  const desbloqueadas = G.conquistasDesbloqueadas.length;
+  const total = CONQUISTAS_DEF.length;
+  const hdr = document.getElementById('conquistas-header');
+  if (hdr) hdr.innerHTML = `
+    <span>Desbloqueadas: <strong>${desbloqueadas}/${total}</strong></span>
+    <span style="opacity:.6">${Math.round(desbloqueadas/total*100)}% completo</span>`;
   document.getElementById('conquistas-lista').innerHTML = CONQUISTAS_DEF.map(c => {
     const ok = G.conquistasDesbloqueadas.includes(c.id);
-    return `<div class="conquista-card ${ok?'conquista-ok':'conquista-bloq'}">
-      <span style="font-size:24px">${ok ? c.icon : '🔒'}</span>
-      <div><div style="font-family:'Cinzel',serif;font-size:12px">${c.nome}</div><div style="font-size:11px;opacity:.6">${ok ? c.desc : '???'}</div></div>
+    return `<div class="conquista-card ${ok?'conquista-ok':'conquista-bloq'}" style="display:flex;align-items:center;gap:.75rem;margin-bottom:8px;padding:.65rem .8rem;border:1px solid ${ok?'rgba(255,215,0,.25)':'rgba(255,255,255,.08)'};border-radius:14px;background:${ok?'rgba(255,215,0,.06)':'rgba(255,255,255,.02)'}">
+      <span style="font-size:26px;flex-shrink:0;filter:${ok?'drop-shadow(0 0 8px rgba(255,215,0,.4))':'grayscale(1) opacity(.3)'}">${ok ? c.icon : '🔒'}</span>
+      <div style="flex:1;min-width:0">
+        <div style="font-family:'Cinzel',serif;font-size:12px;color:${ok?'#ffd07d':'rgba(255,255,255,.5)'}">${ok ? c.nome : '???'}</div>
+        <div style="font-size:11px;opacity:${ok?.75:.4};margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${ok ? c.desc : 'Desbloqueie para revelar'}</div>
+      </div>
+      ${ok ? '<span style="font-size:14px;flex-shrink:0">✅</span>' : ''}
     </div>`;
   }).join('');
 }
@@ -1442,10 +1957,10 @@ function renderStats() {
       <div style="font-family:'Cinzel',serif;font-size:10px;opacity:.5;margin-bottom:.5rem">BÔNUS ATIVOS</div>
       <div style="font-size:12px;line-height:1.8">
         <span style="color:${vr.hex}">🪄</span> Varinha ${vr.nome} &nbsp;|&nbsp;
-        +${(bonus.danoPct*100).toFixed(0)}% dano (cap 60%) &nbsp;|&nbsp;
+        +${(bonus.danoPct*100).toFixed(0)}% dano (cap 50%) &nbsp;|&nbsp;
         Crítico x${bonus.criticoMult} &nbsp;|&nbsp;
         ${bonus.dmgReducPct>0 ? `-${(bonus.dmgReducPct*100).toFixed(0)}% dano recebido &nbsp;|&nbsp;` : ''}
-        ${G.frenesiStacks>0 ? `🔥 Frenesi x${G.frenesiStacks}` : ''}
+        ${G.frenesiStacks>0 ? `🔥 Frenesi x${G.frenesiStacks}/${bonus.frenesiCap}` : ''}
       </div>
     </div>
     ${top ? `<div style="text-align:center;font-size:11px;opacity:.5;margin-top:.5rem">Favorito: <strong>${INIMIGOS_BASE[top[0]]?.nome||top[0]}</strong> (${top[1]}x)</div>` : ''}`;
