@@ -3,7 +3,7 @@
 body{min-height:100vh;display:flex;align-items:center;justify-content:center;background:#0d0b18;font-family:'EB Garamond',Georgia,serif;}
 
 /* ══ CONTAINER ══ */
-#happ{width:100%;max-width:600px;min-height:560px;padding:2rem 1.8rem 1.5rem;position:relative;border-radius:12px;overflow:hidden;transition:background .8s,color .6s;}
+/* #happ estilos definidos inline no index.html */
 #happ::before{content:'';position:absolute;inset:0;opacity:.03;pointer-events:none;background-image:repeating-linear-gradient(45deg,currentColor 0,currentColor 1px,transparent 0,transparent 50%);background-size:22px 22px;}
 
 /* ══ TELAS ══ */
@@ -69,7 +69,7 @@ h3{font-family:'Cinzel',serif;font-size:12px;font-weight:700;letter-spacing:1px;
 .bar-hp{background:#e74c3c;} .bar-mp{background:#3498db;} .bar-xp{background:#f39c12;}
 
 /* ══ MAPA ══ */
-.map-scroll{max-height:280px;overflow-y:auto;padding-right:4px;margin-bottom:.5rem;}
+.map-scroll{max-height:320px;overflow-y:auto;padding-right:4px;margin-bottom:.5rem;}
 .map-scroll::-webkit-scrollbar{width:4px;}
 .map-scroll::-webkit-scrollbar-thumb{background:rgba(255,255,255,.2);border-radius:4px;}
 .map-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px;}
@@ -143,11 +143,11 @@ h3{font-family:'Cinzel',serif;font-size:12px;font-weight:700;letter-spacing:1px;
 .escolha-btn:hover:not(:disabled){border-color:rgba(255,215,0,.35)!important;background:rgba(255,215,0,.06)!important;}
 
 /* ══ MISSÕES & CONQUISTAS ══ */
-.missao-card{border:1px solid rgba(255,255,255,.12);border-radius:8px;padding:.8rem;background:rgba(255,255,255,.04);margin-bottom:.6rem;}
-.missao-completa{border-color:rgba(100,255,150,.25);background:rgba(100,255,150,.05);}
-.conquista-card{display:flex;align-items:center;gap:.8rem;border:1px solid rgba(255,255,255,.12);border-radius:8px;padding:.7rem;background:rgba(255,255,255,.04);margin-bottom:.5rem;}
-.conquista-ok{border-color:rgba(255,215,0,.3);background:rgba(255,215,0,.06);}
-.conquista-bloq{opacity:.4;}
+.missao-card{border:1px solid rgba(255,255,255,.12);border-radius:14px;padding:.8rem;background:rgba(255,255,255,.04);margin-bottom:.6rem;transition:border-color .2s;}
+.missao-completa{border-color:rgba(100,255,150,.3)!important;background:rgba(100,255,150,.06)!important;}
+.conquista-card{display:flex;align-items:center;gap:.8rem;border:1px solid rgba(255,255,255,.12);border-radius:14px;padding:.7rem .8rem;background:rgba(255,255,255,.04);margin-bottom:.5rem;transition:all .2s;}
+.conquista-ok{border-color:rgba(255,215,0,.3)!important;background:rgba(255,215,0,.06)!important;}
+.conquista-bloq{opacity:.55;}
 
 /* ══ DIÁRIO ══ */
 .diario-entry{border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:.9rem 1rem;background:rgba(255,255,255,.03);margin-bottom:.7rem;}
@@ -181,45 +181,16 @@ h3{font-family:'Cinzel',serif;font-size:12px;font-weight:700;letter-spacing:1px;
 @keyframes modalIn{from{transform:scale(.85);opacity:0;}to{transform:scale(1);opacity:1;}}
 
 /* ══ TEMAS ══ */
-.th-g{background:#2a0a0a;color:#f5d78e;} .th-s{background:#061a10;color:#b8dfc0;}
-.th-r{background:#080f2a;color:#bdd0f0;} .th-h{background:#1a1200;color:#ffe99a;}
-.th-d{background:#12101e;color:#e0d5c5;}
+/* Temas antigos removidos - index.html define os backgrounds */
 
 /* ══ NOTIFICAÇÃO & SAVE ══ */
 #notif-box{position:fixed;top:18px;left:50%;transform:translateX(-50%);padding:8px 18px;border-radius:20px;font-size:13px;font-family:'Cinzel',serif;letter-spacing:.5px;z-index:9999;background:rgba(255,220,100,.2);border:1px solid rgba(255,220,100,.4);color:#ffe99a;display:none;text-align:center;white-space:nowrap;animation:slideDown .3s ease;}
 @keyframes slideDown{from{transform:translateX(-50%) translateY(-20px);opacity:0;}to{transform:translateX(-50%) translateY(0);opacity:1;}}
 .save-ind{position:absolute;top:12px;left:12px;font-size:10px;font-family:'Cinzel',serif;opacity:.4;letter-spacing:1px;}
 
-body{
-  background:
-    radial-gradient(circle at top, rgba(255,177,66,.12), transparent 28%),
-    radial-gradient(circle at 20% 20%, rgba(72,130,255,.15), transparent 22%),
-    linear-gradient(180deg, #080b14 0%, #0d1322 48%, #090b11 100%);
-  color:#f5f2ea;
-}
+/* ══ REFINAMENTOS VISUAIS v6 ══ */
 
-#happ{
-  max-width:720px;
-  min-height:620px;
-  border:1px solid rgba(255,255,255,.12);
-  box-shadow:0 28px 80px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,255,255,.08);
-  border-radius:26px;
-  padding:2.4rem 2rem 1.8rem;
-  backdrop-filter:blur(18px);
-}
-
-#happ::after{
-  content:'';
-  position:absolute;
-  inset:0;
-  pointer-events:none;
-  background:
-    linear-gradient(135deg, rgba(255,255,255,.06), transparent 35%),
-    radial-gradient(circle at 85% 20%, rgba(255,209,102,.12), transparent 18%);
-}
-
-h1{font-size:34px;letter-spacing:5px;text-shadow:0 0 18px rgba(255,210,120,.18);}
-h2{font-size:16px;letter-spacing:1px;}
+/* h1/h2 refinados inline no index.html */
 
 .btn{
   border-radius:12px;
@@ -273,22 +244,7 @@ h2{font-size:16px;letter-spacing:1px;}
   border-bottom:none;
 }
 
-#btn-som,
-#btn-save-manual{
-  position:absolute;
-  top:14px;
-  border:none;
-  border-radius:999px;
-  padding:8px 12px;
-  cursor:pointer;
-  z-index:50;
-  font-family:'Cinzel',serif;
-  letter-spacing:1px;
-  background:rgba(12,17,28,.7);
-  color:#f4e9d2;
-  box-shadow:0 8px 18px rgba(0,0,0,.25);
-}
-
+/* Botões flutuantes: estilos base no index.html inline */
 #btn-som{right:14px;font-size:14px;opacity:.95;}
 #btn-save-manual{right:68px;font-size:10px;}
 
@@ -343,11 +299,7 @@ h2{font-size:16px;letter-spacing:1px;}
 .rarity-mitico{box-shadow:0 0 26px rgba(214,220,255,.11), inset 0 0 0 1px rgba(214,220,255,.22);}
 .rarity-lendario{box-shadow:0 0 30px rgba(255,209,102,.18), inset 0 0 0 1px rgba(255,209,102,.3);}
 
-.th-g,.th-s,.th-r,.th-h,.th-d{
-  background:
-    radial-gradient(circle at top, rgba(255,255,255,.06), transparent 26%),
-    linear-gradient(160deg, rgba(5,8,15,.92), rgba(8,10,18,.78));
-}
+/* Temas de casa: cores base definidas no index.html inline, apenas overrides aqui */
 .th-g{color:#ffd89b;}
 .th-s{color:#c3f0d0;}
 .th-r{color:#d7e4ff;}
@@ -368,4 +320,3 @@ h2{font-size:16px;letter-spacing:1px;}
 
 
     }
-
