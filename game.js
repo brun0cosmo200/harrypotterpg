@@ -165,16 +165,75 @@ function aplicarMascote(mascote) {
   if (mascote.bonus?.crit) { G.chanceCritico = Math.min(0.60, (G.chanceCritico || 0.10) + mascote.bonus.crit); }
 }
 
+function renderMascoteRoleta() {
+  const atual = getMascote();
+  const podeGirar = (G.girosMascote || 0) > 0;
+  const el = document.getElementById('mascote-html');
+  if (!el) return;
+  el.innerHTML = `
+    <div class="cla-panel">
+      <div class="cla-header">
+        <div class="cla-kicker">ROLETA DE MASCOTES</div>
+        <div class="cla-copy">Seu fiel companheiro te acompanha em batalha. Cada mascote tem bônus únicos — quanto mais raro, mais poderoso.</div>
+      </div>
+      <div class="cla-wheel-shell">
+        <div class="cla-wheel" id="mascote-wheel">
+          ${MASCOTES.map(m => `<div class="cla-chip rarity-${getRaridadeClass(m.raridade)}">${m.emoji} ${m.nome}</div>`).join('')}
+        </div>
+      </div>
+      <div id="mascote-resultado">
+        ${atual ? renderMascoteCard(atual, true) : '<div class="cla-empty">Nenhum mascote ainda. Gira a roleta e vê quem aparece.</div>'}
+      </div>
+      <div class="cla-actions">
+        <button class="btn btn-center" onclick="girarMascote()" ${!podeGirar ? 'disabled' : ''}>🎠 Girar (${G.girosMascote || 0})</button>
+        <button class="btn btn-center" onclick="go('s-map');renderMap()">← Voltar</button>
+      </div>
+      <div class="cla-hint">Próximo giro: 🪙${formatOuro(getMascotePrice())} · Preço sobe a cada novo mascote.</div>
+    </div>`;
+}
+
+function renderMascoteCard(m, mostrarInfo = false) {
+  const bonusTexto = [];
+  if (m.bonus?.hp)               bonusTexto.push(`+${m.bonus.hp} HP máx`);
+  if (m.bonus?.mp)               bonusTexto.push(`+${m.bonus.mp} MP máx`);
+  if (m.bonus?.crit)             bonusTexto.push(`+${Math.round(m.bonus.crit * 100)}% crítico`);
+  if (m.bonus?.ouroPct)          bonusTexto.push(`+${Math.round(m.bonus.ouroPct * 100)}% ouro`);
+  if (m.bonus?.xpPct)            bonusTexto.push(`+${Math.round(m.bonus.xpPct * 100)}% XP`);
+  if (m.bonus?.ressurgirMascote) bonusTexto.push(`Ressurge com ${m.bonus.ressurgirMascote} HP`);
+  return `
+    <div class="cla-card rarity-${getRaridadeClass(m.raridade)}">
+      <div class="cla-card-top">
+        <div class="cla-badge">${m.emoji} ${m.raridade}</div>
+        <div class="cla-name">${m.nome}</div>
+      </div>
+      <div class="cla-desc">${m.desc}</div>
+      ${bonusTexto.length ? `<div style="font-size:11px;opacity:.65;margin-top:.4rem">${bonusTexto.join(' · ')}</div>` : ''}
+      ${mostrarInfo ? '<div class="cla-subhint">Compra giros na loja para trocar de mascote quando quiser.</div>' : ''}
+    </div>`;
+}
+
 function girarMascote() {
   if ((G.girosMascote || 0) < 1) { notif('Sem giros de mascote. Compra mais na loja.'); return; }
   G.girosMascote--;
   const mascote = sortearMascote();
-  aplicarMascote(mascote);
-  adicionarDiario('mascote');
-  notif(`${mascote.emoji} Mascote: ${mascote.nome} (${mascote.raridade})!`);
-  verificarConquistas();
-  queueAutoSave(200);
-  renderShop();
+  const wheel = document.getElementById('mascote-wheel');
+  if (wheel) wheel.classList.add('spinning');
+  setTimeout(() => {
+    if (wheel) wheel.classList.remove('spinning');
+    aplicarMascote(mascote);
+    adicionarDiario('mascote');
+    notif(`${mascote.emoji} Mascote: ${mascote.nome} (${mascote.raridade})!`);
+    verificarConquistas();
+    queueAutoSave(200);
+    // Atualizar resultado se estiver na tela de roleta, senão atualizar loja
+    const resEl = document.getElementById('mascote-resultado');
+    if (resEl) {
+      resEl.innerHTML = renderMascoteCard(mascote, true);
+      renderMascoteRoleta(); // re-render pra atualizar contador de giros
+    } else {
+      renderShop();
+    }
+  }, 1250);
 }
 
 // ── BÔNUS DAS HABILIDADES ──
@@ -1704,7 +1763,7 @@ function renderShop() {
       <div class="passiva-loja-info">
         ${mas ? `${mas.emoji} Equipado: <strong>${mas.nome}</strong> · ${mas.raridade}<br><span style="opacity:.7">${mas.desc}</span>` : 'Nenhum mascote equipado.'}
         <br>Giros disponíveis: <strong>${G.girosMascote || 0}</strong>
-        ${(G.girosMascote||0) > 0 ? `<br><button class="btn" style="margin-top:6px;font-size:11px" onclick="girarMascote()">🎠 Girar mascote</button>` : ''}
+        ${(G.girosMascote||0) > 0 ? `<br><button class="btn" style="margin-top:6px;font-size:11px" onclick="go('s-mascote');renderMascoteRoleta()">🎠 Abrir roleta de mascote</button>` : ''}
       </div>
       ${girosMas.map(it => rowItemHTML(it, d)).join('') || _semItens()}
     </div>
