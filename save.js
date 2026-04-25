@@ -222,3 +222,238 @@ function deleteSave() {
     localStorage.removeItem(LEGACY_SAVE_KEY);
   } catch (e) {}
 }
+
+// ══════════════════════════════════════════
+//  SAVE MANAGER — renderSaveManager()
+//  Gerencia slots locais + export/import
+// ══════════════════════════════════════════
+
+const SAVE_SLOT_PREFIX = 'hogwarts_slot_';
+const MAX_SLOTS = 3;
+
+function getSlotKey(n) { return `${SAVE_SLOT_PREFIX}${n}`; }
+
+function lerSlot(n) {
+  try {
+    const raw = localStorage.getItem(getSlotKey(n));
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    // slots não têm hash – aceitar como somente leitura de metadados
+    return parsed;
+  } catch (e) { return null; }
+}
+
+function salvarNoSlot(n) {
+  if (!G.casa) { notif('Nenhum personagem ativo para salvar.'); return; }
+  const payload = getSavePayload();
+  payload._slotSavedAt = Date.now();
+  try {
+    localStorage.setItem(getSlotKey(n), JSON.stringify(payload));
+    notif(`💾 Save salvo no Slot ${n}.`);
+    renderSaveManager();
+  } catch (e) {
+    notif('Erro ao salvar no slot.');
+  }
+}
+
+function carregarDoSlot(n) {
+  const raw = localStorage.getItem(getSlotKey(n));
+  if (!raw) { notif('Slot vazio.'); return; }
+  try {
+    const parsed = JSON.parse(raw);
+    const normalized = normalizarSave(parsed);
+    if (!sanitizarValores(normalized)) { notif('Slot corrompido.'); return; }
+    G = { ...estadoInicial(), ...normalized };
+    saveGame('auto');
+    notif(`✅ Slot ${n} carregado com sucesso!`);
+    go('s-map'); renderMap();
+  } catch (e) {
+    notif('Erro ao carregar slot.');
+  }
+}
+
+function apagarSlot(n) {
+  localStorage.removeItem(getSlotKey(n));
+  notif(`🗑️ Slot ${n} apagado.`);
+  renderSaveManager();
+}
+
+function copiarSlotParaPrimario() {
+  // já feito via carregarDoSlot — esta fn fica como alias semântico
+}
+
+function exportarSave() {
+  try {
+    const payload = getSavePayload();
+    const encoded = btoa(unescape(encodeURIComponent(JSON.stringify(payload))));
+    const area = document.getElementById('export-code-area');
+    if (area) { area.value = encoded; area.select(); }
+    try { document.execCommand('copy'); notif('📋 Código copiado para a área de transferência!'); }
+    catch (e) { notif('Código gerado — copie manualmente.'); }
+  } catch (e) {
+    notif('Erro ao exportar save.');
+  }
+}
+
+function importarSave() {
+  const area = document.getElementById('import-code-area');
+  if (!area || !area.value.trim()) { notif('Cole o código de save no campo.'); return; }
+  try {
+    const decoded = JSON.parse(decodeURIComponent(escape(atob(area.value.trim()))));
+    const normalized = normalizarSave(decoded);
+    if (!sanitizarValores(normalized)) { notif('❌ Código inválido ou corrompido.'); return; }
+    G = { ...estadoInicial(), ...normalized };
+    persistPayload(getSavePayload());
+    notif('✅ Save importado! Recarregando...');
+    setTimeout(() => { go('s-map'); renderMap(); }, 800);
+  } catch (e) {
+    notif('❌ Falha ao importar. Verifique o código.');
+  }
+}
+
+function renderSaveManager() {
+  const el = document.getElementById('save-manager-content');
+  if (!el) return;
+
+  // ── Dados do save ativo ──
+  const temSaveAtivo = !!G.casa;
+  const casaAtual = CASAS[G.casa] || null;
+  const nivelAtual = G.nivel || 1;
+  const ouroAtual = G.ouro || 0;
+  const nomeAtual = G.nomePersonagem || '—';
+  const saveAtStr = G.saveAt
+    ? new Date(G.saveAt).toLocaleString('pt-BR', { day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit' })
+    : null;
+
+  // ── Slot ativo (primary) ──
+  const slotAtivoHTML = `
+    <div class="save-section-label">SAVE ATIVO</div>
+    <div class="slot-card ${temSaveAtivo ? 'slot-ocupado slot-ativo' : 'slot-vazio'}">
+      ${temSaveAtivo ? `
+        <div class="slot-header">
+          <span class="slot-num">PRIMARY</span>
+          <span class="slot-badge">🟢 Ativo</span>
+          ${G.campanha?.concluida ? '<span class="slot-badge camp-badge">📖 Campanha ✓</span>' : ''}
+        </div>
+        <div class="slot-nome">${casaAtual?.crest || ''} ${nomeAtual}</div>
+        <div class="slot-info">
+          Nível ${nivelAtual} · ${casaAtual?.nome || '—'}<br>
+          🪙 ${ouroAtual.toLocaleString()} · ❤️ ${G.hp}/${G.hpMax}<br>
+          ${saveAtStr ? `💾 ${saveAtStr}` : ''}
+        </div>
+        <div class="slot-actions">
+          <button class="btn" style="font-size:11px;flex:1" onclick="manualSaveGame();renderSaveManager()">💾 Salvar agora</button>
+        </div>
+      ` : `
+        <div style="opacity:.4;font-style:italic;font-size:12px">Nenhum personagem ativo</div>
+      `}
+    </div>`;
+
+  // ── Slots 1-3 ──
+  const slotsHTML = Array.from({ length: MAX_SLOTS }, (_, i) => {
+    const n = i + 1;
+    const slot = lerSlot(n);
+
+    if (!slot) {
+      return `
+        <div class="slot-card slot-vazio">
+          <div class="slot-num">SLOT ${n}</div>
+          <div style="font-size:11px;opacity:.4;margin:.4rem 0;font-style:italic">Vazio</div>
+          <div class="slot-actions" style="margin-top:auto">
+            <button class="btn" style="font-size:11px;flex:1;opacity:${temSaveAtivo?1:.4}"
+              ${temSaveAtivo ? `onclick="salvarNoSlot(${n})"` : 'disabled'}>
+              💾 Salvar aqui
+            </button>
+          </div>
+        </div>`;
+    }
+
+    const casaSlot = CASAS[slot.casa] || null;
+    const dtStr = slot._slotSavedAt
+      ? new Date(slot._slotSavedAt).toLocaleString('pt-BR', { day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit' })
+      : (slot.saveAt ? new Date(slot.saveAt).toLocaleString('pt-BR', { day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit' }) : '—');
+
+    return `
+      <div class="slot-card slot-ocupado">
+        <div class="slot-header">
+          <span class="slot-num">SLOT ${n}</span>
+          ${slot.campanha?.concluida ? '<span class="slot-badge camp-badge">📖 Camp ✓</span>' : ''}
+        </div>
+        <div class="slot-nome">${casaSlot?.crest || ''} ${slot.nomePersonagem || '—'}</div>
+        <div class="slot-info">
+          Nível ${slot.nivel || 1} · ${casaSlot?.nome || '—'}<br>
+          🪙 ${(slot.ouro || 0).toLocaleString()}<br>
+          💾 ${dtStr}
+        </div>
+        <div class="slot-actions">
+          <button class="btn" style="font-size:10px;flex:1" onclick="carregarDoSlot(${n})">⬆️ Carregar</button>
+          <button class="btn" style="font-size:10px;flex:1" onclick="salvarNoSlot(${n})">💾 Sobrescrever</button>
+          <button class="btn" style="font-size:10px;background:rgba(255,60,60,.12);border-color:rgba(255,60,60,.3)"
+            onclick="if(confirm('Apagar Slot ${n}?')) apagarSlot(${n})">🗑️</button>
+        </div>
+      </div>`;
+  }).join('');
+
+  // ── Export / Import ──
+  const transferHTML = `
+    <div class="save-section-label" style="margin-top:1rem">EXPORTAR / IMPORTAR</div>
+    <div class="slot-card" style="gap:8px">
+      <div style="font-size:11px;opacity:.6;font-style:italic;line-height:1.5">
+        Use para fazer backup ou transferir seu save entre dispositivos.
+      </div>
+      <textarea id="export-code-area" placeholder="Clique em Exportar para gerar o código…"></textarea>
+      <div class="transfer-row">
+        <button class="btn" onclick="exportarSave()">📤 Exportar save ativo</button>
+      </div>
+      <textarea id="import-code-area" placeholder="Cole aqui o código de importação…"></textarea>
+      <div class="transfer-row">
+        <button class="btn" onclick="importarSave()">📥 Importar e carregar</button>
+      </div>
+    </div>`;
+
+  // ── Backup automático ──
+  const backupRaw = localStorage.getItem('hogwarts_rpg_v5_backup');
+  let backupHTML = '';
+  if (backupRaw) {
+    try {
+      const bk = JSON.parse(backupRaw);
+      const bkDt = bk.saveAt ? new Date(bk.saveAt).toLocaleString('pt-BR', { day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit' }) : '—';
+      const bkCasa = CASAS[bk.casa] || null;
+      backupHTML = `
+        <div class="save-section-label" style="margin-top:1rem">BACKUP AUTOMÁTICO</div>
+        <div class="slot-card slot-ocupado">
+          <div class="slot-header"><span class="slot-num">BACKUP</span><span class="slot-badge" style="opacity:.6">⚙️ Auto</span></div>
+          <div class="slot-nome">${bkCasa?.crest || ''} ${bk.nomePersonagem || '—'}</div>
+          <div class="slot-info">Nível ${bk.nivel || 1} · ${bkCasa?.nome || '—'} · 💾 ${bkDt}</div>
+          <div class="slot-actions">
+            <button class="btn" style="font-size:11px;flex:1" onclick="if(confirm('Restaurar backup? O save atual será substituído.')) restaurarBackup()">♻️ Restaurar backup</button>
+          </div>
+        </div>`;
+    } catch (e) {}
+  }
+
+  el.innerHTML = `
+    <div class="save-manager-wrap">
+      ${slotAtivoHTML}
+      <div class="save-section-label" style="margin-top:1rem">SLOTS DE SAVE</div>
+      <div class="slots-grid">${slotsHTML}</div>
+      ${backupHTML}
+      ${transferHTML}
+    </div>`;
+}
+
+function restaurarBackup() {
+  const raw = localStorage.getItem('hogwarts_rpg_v5_backup');
+  if (!raw) { notif('Nenhum backup disponível.'); return; }
+  try {
+    const parsed = JSON.parse(raw);
+    const normalized = normalizarSave(parsed);
+    if (!sanitizarValores(normalized)) { notif('Backup corrompido.'); return; }
+    G = { ...estadoInicial(), ...normalized };
+    saveGame('auto');
+    notif('✅ Backup restaurado!');
+    go('s-map'); renderMap();
+  } catch (e) {
+    notif('Erro ao restaurar backup.');
+  }
+}
