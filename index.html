@@ -4,10 +4,15 @@
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Hogwarts RPG</title>
-  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;900&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&display=swap" rel="stylesheet"/>
-  <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700&family=IM+Fell+English:ital@0;1&display=swap" rel="stylesheet"/>
+
+  <!-- ── FONTES ── -->
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;900&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Cinzel+Decorative:wght@400;700&family=IM+Fell+English:ital@0;1&display=swap" rel="stylesheet"/>
+
+  <!-- ── CSS EXTERNO ── -->
+  <link rel="stylesheet" href="style.css"/>
+  <link rel="stylesheet" href="campanha.css"/>
+
   <style>
-    
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {
@@ -452,54 +457,6 @@ h3 {
 .rest-box { border: 1px solid rgba(100,180,255,.2); border-radius: 12px; padding: 1.2rem; background: rgba(50,100,200,.05); }
 .rest-timer { text-align: center; font-family: 'Cinzel', serif; font-size: 14px; padding: .8rem; border: 1px solid var(--border-gold); border-radius: 10px; background: var(--gold-dim); color: var(--gold-light); }
 
-.cap-header { text-align: center; margin-bottom: 1.2rem; padding: .8rem 1rem; border: 1px solid var(--border-gold); border-radius: 12px; background: var(--gold-dim); }
-.cap-kicker   { font-family: 'Cinzel', serif; font-size: 12px; letter-spacing: 2px; color: var(--gold-light); margin-bottom: .25rem; }
-.cap-subtitulo{ font-size: 12px; font-style: italic; opacity: .6; margin-bottom: .6rem; line-height: 1.5; }
-.cap-progress { display: flex; justify-content: center; gap: 6px; }
-.cap-dot { width: 8px; height: 8px; border-radius: 50%; border: 1px solid var(--border-gold); opacity: .3; transition: all .3s; }
-.cap-dot.done  { background: var(--gold); opacity: .6; border-color: var(--gold); }
-.cap-dot.atual { background: #fff; opacity: 1; border-color: #fff; box-shadow: 0 0 8px rgba(255,255,255,.3); }
-
-.cena-box { border: 1px solid var(--border); border-radius: 12px; padding: 1.2rem; background: rgba(0,0,0,.2); margin-bottom: 1rem; max-height: 250px; overflow-y: auto; }
-.cena-box::-webkit-scrollbar { width: 2px; }
-.cena-box::-webkit-scrollbar-thumb { background: var(--border-gold); border-radius: 2px; }
-.cena-art  { font-size: 44px; text-align: center; margin-bottom: .7rem; filter: drop-shadow(0 0 14px rgba(201,168,76,.2)); }
-.cena-texto { font-size: 14px; line-height: 1.9; font-style: italic; font-weight: 300; opacity: .9; white-space: pre-wrap; }
-
-.opcoes-campanha { display: flex; flex-direction: column; gap: 7px; margin-bottom: .8rem; }
-.opcao-camp { border-radius: 10px !important; border-color: var(--border) !important; background: var(--stone) !important; font-size: 13px !important; text-align: left !important; padding: 11px 14px !important; transition: all .2s !important; line-height: 1.5 !important; }
-.opcao-camp:hover:not(:disabled) { border-color: var(--border-gold) !important; background: var(--gold-dim) !important; transform: translateX(4px) !important; }
-
-.camp-btn { background: var(--gold-dim) !important; border-color: var(--border-gold) !important; color: var(--gold-light) !important; }
-.camp-btn:hover:not(:disabled) { background: rgba(201,168,76,.28) !important; box-shadow: 0 0 20px rgba(201,168,76,.12) !important; }
-
-.inimigo-preview { border: 1px solid rgba(192,57,43,.25); border-radius: 12px; padding: 1.2rem; background: rgba(192,57,43,.05); text-align: center; margin-bottom: 1rem; }
-.inimigo-nome  { font-family: 'Cinzel', serif; font-size: 15px; letter-spacing: 1px; margin: .5rem 0 .3rem; color: #ff9a9a; }
-.inimigo-stats { font-size: 11px; opacity: .5; margin-bottom: .5rem; }
-.inimigo-fala  { font-size: 13px; font-style: italic; opacity: .7; line-height: 1.6; padding: .5rem; border-left: 2px solid rgba(192,57,43,.3); text-align: left; }
-.batalha-concluida, .escolha-feita { text-align: center; padding: .6rem; font-size: 12px; opacity: .5; font-family: 'Cinzel', serif; letter-spacing: 1px; margin-bottom: .6rem; }
-
-.aliados-box { border: 1px solid rgba(100,200,255,.12); border-radius: 10px; padding: .7rem; background: rgba(50,150,255,.04); margin-top: .8rem; }
-.aliados-label { font-family: 'Cinzel', serif; font-size: 9px; letter-spacing: 1px; opacity: .4; margin-bottom: .5rem; }
-.aliados-lista { display: flex; flex-wrap: wrap; gap: 5px; }
-.aliado-chip { display: flex; align-items: center; gap: 5px; padding: 3px 9px; border: 1px solid rgba(100,200,255,.18); border-radius: 20px; font-size: 12px; background: rgba(100,200,255,.05); }
-
-.camp-status-bar { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 5px; padding: 6px 12px; background: var(--gold-dim); border: 1px solid var(--border-gold); border-radius: 10px; font-size: 10px; font-family: 'Cinzel', serif; letter-spacing: .5px; margin-bottom: .7rem; }
-
-.final-wrap { text-align: center; }
-.final-art   { font-size: 64px; margin-bottom: .5rem; animation: pulseGlow 2s ease-in-out infinite; }
-@keyframes pulseGlow { 0%,100% { filter: drop-shadow(0 0 20px rgba(201,168,76,.3)); } 50% { filter: drop-shadow(0 0 40px rgba(201,168,76,.6)); } }
-.final-titulo { font-family: 'Cinzel', serif; font-size: 22px; letter-spacing: 3px; color: var(--gold-light); margin-bottom: .6rem; }
-.final-texto  { font-size: 14px; line-height: 1.9; font-style: italic; font-weight: 300; opacity: .88; max-height: 180px; overflow-y: auto; border: 1px solid var(--border); border-radius: 10px; padding: 1rem; background: rgba(0,0,0,.2); text-align: left; margin-bottom: 1rem; }
-.final-relacoes { border: 1px solid var(--border); border-radius: 10px; padding: .8rem 1rem; background: var(--stone); margin-bottom: .8rem; }
-.rel-label { font-family: 'Cinzel', serif; font-size: 9px; letter-spacing: 1px; opacity: .4; margin-bottom: .6rem; }
-.rel-row { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
-.rel-nome { font-size: 11px; width: 100px; flex-shrink: 0; text-align: left; }
-.rel-track { flex: 1; height: 4px; background: var(--border); border-radius: 3px; overflow: hidden; }
-.rel-fill  { height: 100%; border-radius: 3px; transition: width .6s; }
-.rel-val   { font-size: 10px; opacity: .5; width: 28px; text-align: right; font-family: 'Cinzel', serif; }
-.final-recompensa { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; border: 1px solid var(--border-gold); border-radius: 10px; padding: .7rem; background: var(--gold-dim); font-family: 'Cinzel', serif; font-size: 12px; letter-spacing: .5px; color: var(--gold-light); }
-
 .save-manager-wrap { max-height: 430px; overflow-y: auto; padding-right: 4px; }
 .save-manager-wrap::-webkit-scrollbar { width: 2px; }
 .save-manager-wrap::-webkit-scrollbar-thumb { background: var(--border-gold); border-radius: 2px; }
@@ -531,17 +488,6 @@ h3 {
 .th-s { --casa-accent: #27ae60; --casa-bg: rgba(39,174,96,.06); }
 .th-r { --casa-accent: #2980b9; --casa-bg: rgba(41,128,185,.06); }
 .th-h { --casa-accent: #d4ac0d; --casa-bg: rgba(212,172,13,.06); }
-
-@media (max-width: 600px) {
-  #happ { border-radius: 0; }
-  body  { padding: 0; align-items: flex-start; }
-  .hub-btn { min-width: calc(50% - 6px); }
-  .map-grid, .spells-grid, .avatar-grid, .varinha-grid, .cla-wheel { grid-template-columns: 1fr; }
-  .slots-grid { grid-template-columns: 1fr; }
-  #btn-save-manual { right: 56px; padding: 5px 8px; }
-  .stats-grid { grid-template-columns: 1fr 1fr; }
-  .go-stats-grid { grid-template-columns: 1fr 1fr; }
-}
 
 /* ══ GAME OVER RICO ══ */
 .gameover-header { text-align: center; margin-bottom: 1.4rem; }
@@ -576,7 +522,7 @@ h3 {
   text-shadow: 0 2px 8px rgba(0,0,0,.8);
   animation: dmgFloat .9s ease-out forwards;
 }
-.dmg-float.dmg-player { color: #ff6b6b; }
+.dmg-float.dmg-player  { color: #ff6b6b; }
 .dmg-float.dmg-critico { color: #ffd700; font-size: 28px; }
 .dmg-float.dmg-cura    { color: #7dff9a; }
 @keyframes dmgFloat {
@@ -596,35 +542,11 @@ h3 {
 .enemy-hit { animation: enemyHit .35s ease; }
 
 /* ══ RANKING ══ */
-.ranking-cat {
-  border: 1px solid var(--border);
-  border-radius: 14px;
-  padding: 1rem;
-  background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.02));
-  margin-bottom: .8rem;
-}
-.ranking-cat-label {
-  font-family: 'Cinzel', serif;
-  font-size: 11px;
-  letter-spacing: 2px;
-  opacity: .5;
-  margin-bottom: .6rem;
-}
-.ranking-row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 6px 8px;
-  border-radius: 10px;
-  margin-bottom: 4px;
-  background: rgba(255,255,255,.03);
-  transition: background .15s;
-}
-.ranking-first {
-  background: rgba(201,168,76,.1) !important;
-  border: 1px solid rgba(201,168,76,.2);
-}
-.ranking-medal { font-size: 16px; flex-shrink: 0; }
+.ranking-cat { border: 1px solid var(--border); border-radius: 14px; padding: 1rem; background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.02)); margin-bottom: .8rem; }
+.ranking-cat-label { font-family: 'Cinzel', serif; font-size: 11px; letter-spacing: 2px; opacity: .5; margin-bottom: .6rem; }
+.ranking-row { display: flex; align-items: center; gap: 8px; padding: 6px 8px; border-radius: 10px; margin-bottom: 4px; background: rgba(255,255,255,.03); transition: background .15s; }
+.ranking-first { background: rgba(201,168,76,.1) !important; border: 1px solid rgba(201,168,76,.2); }
+.ranking-medal  { font-size: 16px; flex-shrink: 0; }
 .ranking-avatar { font-size: 18px; flex-shrink: 0; }
 .ranking-info { flex: 1; display: flex; flex-direction: column; min-width: 0; }
 .ranking-nome { font-family: 'Cinzel', serif; font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -633,62 +555,23 @@ h3 {
 .ranking-vazio { font-size: 12px; opacity: .4; font-style: italic; text-align: center; padding: .4rem; }
 
 /* ══ BOSS FASE 2 ══ */
-.fase2-banner {
-  background: linear-gradient(90deg, rgba(255,0,0,.15), rgba(255,100,0,.1), rgba(255,0,0,.15));
-  border: 1px solid rgba(255,80,0,.3);
-  border-radius: 8px;
-  padding: 4px 10px;
-  font-family: 'Cinzel', serif;
-  font-size: 10px;
-  letter-spacing: 1px;
-  color: #ff9a9a;
-  text-align: center;
-  animation: fasePulse 1.5s ease-in-out infinite;
-  margin-bottom: .4rem;
-}
-@keyframes fasePulse {
-  0%,100% { opacity: .8; }
-  50%      { opacity: 1; box-shadow: 0 0 12px rgba(255,50,0,.3); }
-}
+.fase2-banner { background: linear-gradient(90deg, rgba(255,0,0,.15), rgba(255,100,0,.1), rgba(255,0,0,.15)); border: 1px solid rgba(255,80,0,.3); border-radius: 8px; padding: 4px 10px; font-family: 'Cinzel', serif; font-size: 10px; letter-spacing: 1px; color: #ff9a9a; text-align: center; animation: fasePulse 1.5s ease-in-out infinite; margin-bottom: .4rem; }
+@keyframes fasePulse { 0%,100% { opacity: .8; } 50% { opacity: 1; box-shadow: 0 0 12px rgba(255,50,0,.3); } }
 
-
-/* ══════════════════════════════════════════════════════
-   REDESIGN VISUAL — UX / Performance / Design upgrade
-   ══════════════════════════════════════════════════════ */
-
-/* ── Barras de HP/MP mais ricas ── */
+/* ══ REDESIGN VISUAL — barras, spells, zones, etc. ══ */
 .bar-wrap   { height: 6px; background: rgba(255,255,255,.08); border-radius: 6px; margin-top: 3px; overflow: hidden; position: relative; }
-.bar-fill   { height: 100%; border-radius: 6px; transition: width .45s cubic-bezier(.4,0,.2,1); position: relative; }
+.bar-fill   { height: 100%; border-radius: 6px; transition: width .45s cubic-bezier(.4,0,.2,1); }
 .bar-hp { background: linear-gradient(90deg, #a93226, #e74c3c, #ff6b6b); box-shadow: 0 0 8px rgba(231,76,60,.4); }
 .bar-mp { background: linear-gradient(90deg, #1a5276, #2980b9, #5dade2); box-shadow: 0 0 8px rgba(41,128,185,.4); }
 .bar-xp { background: linear-gradient(90deg, #7d6608, #d4ac0d, #f7dc6f); box-shadow: 0 0 6px rgba(212,172,13,.35); }
 
-/* ── Enemy HP bar melhorada ── */
 .enemy-hp-text { font-size: 11px; opacity: .6; margin: 3px 0; }
 .enemy-hp-bar  { height: 7px; background: rgba(255,255,255,.08); border-radius: 6px; max-width: 200px; margin: 4px auto 0; overflow: hidden; }
 .enemy-hp-fill { height: 100%; border-radius: 6px; transition: width .5s cubic-bezier(.4,0,.2,1); box-shadow: 0 0 10px rgba(231,76,60,.5); }
 .boss-crown    { font-size: 11px; opacity: .7; }
 
-/* ── Buff chips — passivas ativas durante combate ── */
-.buffs-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 5px;
-  justify-content: center;
-  padding: .35rem 0;
-}
-.buff-chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  font-family: 'Cinzel', serif;
-  font-size: 9.5px;
-  letter-spacing: .5px;
-  padding: 3px 8px;
-  border-radius: 20px;
-  border: 1px solid;
-  animation: buffIn .25s ease;
-}
+.buffs-row { display: flex; flex-wrap: wrap; gap: 5px; justify-content: center; padding: .35rem 0; }
+.buff-chip { display: inline-flex; align-items: center; gap: 4px; font-family: 'Cinzel', serif; font-size: 9.5px; letter-spacing: .5px; padding: 3px 8px; border-radius: 20px; border: 1px solid; animation: buffIn .25s ease; }
 .buff-chip em { font-style: normal; opacity: .75; }
 @keyframes buffIn { from { opacity:0; transform:scale(.85); } to { opacity:1; transform:scale(1); } }
 .buff-fire { background: rgba(231,76,60,.12);  border-color: rgba(231,76,60,.3);  color: #ff9a7d; }
@@ -698,7 +581,6 @@ h3 {
 .buff-green{ background: rgba(39,174,96,.12);  border-color: rgba(39,174,96,.3);  color: #7dff9a; }
 .buff-bad  { background: rgba(127,0,255,.12);  border-color: rgba(127,0,255,.3);  color: #c39bd3; }
 
-/* ── Spell buttons com MP bar ── */
 .spell-btn {
   padding: 10px 7px;
   border: 1px solid var(--border);
@@ -719,7 +601,6 @@ h3 {
   transform: translateY(-2px);
   box-shadow: 0 6px 20px rgba(0,0,0,.3);
 }
-.spell-btn:active:not(:disabled) { transform: translateY(0); }
 .spell-btn:disabled { opacity: .28; cursor: not-allowed; }
 .spell-icon { font-size: 18px; margin-bottom: 2px; }
 .spell-name { font-family: 'Cinzel', serif; font-size: 9.5px; letter-spacing: .5px; margin: 2px 0; }
@@ -728,13 +609,10 @@ h3 {
 .spell-mp-fill { height: 100%; border-radius: 2px; background: linear-gradient(90deg,#1a5276,#3498db); transition: width .3s; }
 .spell-learned { border-color: var(--border-gold) !important; background: linear-gradient(160deg,rgba(201,168,76,.14),rgba(201,168,76,.05)) !important; }
 .spell-basico  { border-color: var(--border) !important; opacity: .6; }
-
-/* ── Spell delta comparativo (loja de magias) ── */
 .spell-delta { font-size: 10px; font-family: 'Cinzel', serif; padding: 1px 6px; border-radius: 10px; margin-left: 4px; }
 .delta-pos { background: rgba(39,174,96,.12); border: 1px solid rgba(39,174,96,.25); color: #7dff9a; }
 .delta-neg { background: rgba(231,76,60,.08); border: 1px solid rgba(231,76,60,.2);  color: #ff9a7d; }
 
-/* ── Zone cards redesenhadas ── */
 .zone-btn {
   padding: 14px 10px 12px;
   border: 1px solid var(--border);
@@ -758,11 +636,7 @@ h3 {
   pointer-events: none;
 }
 .zone-btn:hover:not(:disabled)::before { opacity: .12; }
-.zone-btn:hover:not(:disabled) {
-  border-color: rgba(201,168,76,.35);
-  transform: translateY(-3px);
-  box-shadow: 0 12px 30px rgba(0,0,0,.35);
-}
+.zone-btn:hover:not(:disabled) { border-color: rgba(201,168,76,.35); transform: translateY(-3px); box-shadow: 0 12px 30px rgba(0,0,0,.35); }
 .zone-btn.zone-boss   { border-color: rgba(255,140,0,.22); background: linear-gradient(160deg,rgba(255,100,0,.06),rgba(255,60,0,.02)); }
 .zone-btn.zone-boss:hover:not(:disabled) { border-color: rgba(255,140,0,.5); }
 .zone-btn.zone-active { border-color: rgba(100,200,255,.3); background: linear-gradient(160deg,rgba(50,150,255,.07),rgba(50,150,255,.02)); }
@@ -774,25 +648,9 @@ h3 {
 .zone-progress { font-size: 10px; color: #7dd; margin-top: 3px; font-family: 'Cinzel', serif; }
 .boss-tag      { font-size: 10px; color: #ffa040; margin-top: 3px; font-family: 'Cinzel', serif; letter-spacing: .5px; }
 
-/* ── Map grid com mais respiro ── */
-.map-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-
-/* ── Status bar mais elegante ── */
-.stat-box {
-  flex: 1;
-  min-width: 52px;
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  padding: 6px 8px;
-  background: linear-gradient(160deg, rgba(255,255,255,.07) 0%, rgba(255,255,255,.03) 100%);
-  text-align: center;
-  backdrop-filter: blur(8px);
-}
-.stat-label { font-family: 'Cinzel', serif; font-size: 8px; letter-spacing: 1px; opacity: .4; }
-.stat-val   { font-size: 12px; font-weight: 600; font-family: 'Cinzel', serif; }
+.stat-box { flex: 1; min-width: 52px; border: 1px solid var(--border); border-radius: 10px; padding: 6px 8px; background: linear-gradient(160deg, rgba(255,255,255,.07) 0%, rgba(255,255,255,.03) 100%); text-align: center; backdrop-filter: blur(8px); }
 .stat-personagem { min-width: 42px; flex: none; }
 
-/* ── Enemy box aprimorada ── */
 .enemy-box {
   border: 1px solid rgba(192,57,43,.22);
   border-radius: 14px;
@@ -813,40 +671,10 @@ h3 {
 .enemy-art  { font-size: 52px; margin: .3rem 0; filter: drop-shadow(0 4px 16px rgba(192,57,43,.4)); }
 .enemy-name { font-family: 'Cinzel', serif; font-size: 15px; letter-spacing: 1px; margin-bottom: .2rem; }
 
-/* ── Log box com scroll suave ── */
-.log-box {
-  border: 1px solid rgba(255,255,255,.08);
-  border-radius: 10px;
-  padding: .6rem .8rem;
-  background: rgba(0,0,0,.35);
-  min-height: 68px;
-  max-height: 95px;
-  overflow-y: auto;
-  font-size: 12.5px;
-  line-height: 1.75;
-  margin-bottom: .7rem;
-  scroll-behavior: smooth;
-}
-.log-box::-webkit-scrollbar { width: 2px; }
-.log-box::-webkit-scrollbar-thumb { background: var(--border-gold); border-radius: 2px; }
+.log-box { border: 1px solid rgba(255,255,255,.08); border-radius: 10px; padding: .6rem .8rem; background: rgba(0,0,0,.35); min-height: 68px; max-height: 95px; overflow-y: auto; font-size: 12.5px; line-height: 1.75; margin-bottom: .7rem; scroll-behavior: smooth; }
 
-/* ── Momentum bar redesenhada ── */
-.momentum-bar {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 6px 10px;
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  background: rgba(255,255,255,.04);
-  margin-bottom: .6rem;
-  transition: all .3s;
-}
-.momentum-bar.momentum-ready {
-  border-color: rgba(255,215,0,.4);
-  background: rgba(255,215,0,.06);
-  animation: momentumPulse 1.5s ease-in-out infinite;
-}
+.momentum-bar { display: flex; align-items: center; gap: 8px; padding: 6px 10px; border: 1px solid var(--border); border-radius: 10px; background: rgba(255,255,255,.04); margin-bottom: .6rem; transition: all .3s; }
+.momentum-bar.momentum-ready { border-color: rgba(255,215,0,.4); background: rgba(255,215,0,.06); animation: momentumPulse 1.5s ease-in-out infinite; }
 @keyframes momentumPulse { 0%,100%{box-shadow:0 0 0 rgba(255,215,0,0)} 50%{box-shadow:0 0 18px rgba(255,215,0,.2)} }
 .momentum-label { font-family:'Cinzel',serif; font-size:10px; letter-spacing:.5px; opacity:.7; flex:1; }
 .momentum-dots  { display:flex; gap:5px; }
@@ -854,356 +682,83 @@ h3 {
 .momentum-dot.filled { background:var(--gold); border-color:var(--gold); box-shadow:0 0 8px rgba(201,168,76,.5); }
 .momentum-btn { padding:4px 12px !important; font-size:9px !important; }
 
-/* ── Shop rows reimaginadas ── */
-.shop-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 10px 12px;
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  gap: 10px;
-  margin-bottom: 6px;
-  background: linear-gradient(160deg, rgba(255,255,255,.05) 0%, rgba(255,255,255,.02) 100%);
-  transition: border-color .2s;
-}
+.shop-row { display: flex; align-items: center; justify-content: space-between; padding: 10px 12px; border: 1px solid var(--border); border-radius: 10px; gap: 10px; margin-bottom: 6px; background: linear-gradient(160deg, rgba(255,255,255,.05) 0%, rgba(255,255,255,.02) 100%); transition: border-color .2s; }
 .shop-row:hover { border-color: rgba(201,168,76,.25); }
-.shop-section { margin-bottom: 1.2rem; }
-.shop-row-info { flex: 1; font-size: 13px; line-height: 1.5; }
 
-/* ── Quest cards redesenhadas ── */
-.missao-card {
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  padding: .9rem 1rem;
-  background: linear-gradient(160deg, rgba(255,255,255,.06) 0%, rgba(255,255,255,.02) 100%);
-  margin-bottom: .6rem;
-  transition: border-color .2s;
-}
+.missao-card { border: 1px solid var(--border); border-radius: 12px; padding: .9rem 1rem; background: linear-gradient(160deg, rgba(255,255,255,.06) 0%, rgba(255,255,255,.02) 100%); margin-bottom: .6rem; transition: border-color .2s; }
 .missao-completa { border-color: rgba(39,174,96,.25) !important; background: linear-gradient(160deg,rgba(39,174,96,.07),rgba(39,174,96,.02)) !important; }
 
-/* ── Achievement cards ── */
-.conquista-card {
-  display: flex;
-  align-items: center;
-  gap: .8rem;
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  padding: .8rem 1rem;
-  background: linear-gradient(160deg, rgba(255,255,255,.05) 0%, rgba(255,255,255,.02) 100%);
-  margin-bottom: .5rem;
-  transition: all .2s;
-}
+.conquista-card { display: flex; align-items: center; gap: .8rem; border: 1px solid var(--border); border-radius: 12px; padding: .8rem 1rem; background: linear-gradient(160deg, rgba(255,255,255,.05) 0%, rgba(255,255,255,.02) 100%); margin-bottom: .5rem; transition: all .2s; }
 .conquista-ok { border-color: var(--border-gold) !important; background: linear-gradient(160deg,rgba(201,168,76,.1),rgba(201,168,76,.03)) !important; box-shadow: 0 4px 20px rgba(201,168,76,.08); }
 .conquista-bloq { opacity: .32; }
 
-/* ── Skill tree aprimorada ── */
-.habilidade-btn {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  padding: 1rem 1.2rem;
-  border: 1px solid var(--border);
-  border-radius: 14px;
-  background: linear-gradient(160deg, rgba(255,255,255,.07) 0%, rgba(255,255,255,.03) 100%);
-  cursor: pointer;
-  color: var(--text);
-  text-align: left;
-  transition: all .2s cubic-bezier(.4,0,.2,1);
-  width: 100%;
-  position: relative;
-  overflow: hidden;
-}
-.habilidade-btn:hover {
-  border-color: var(--border-gold);
-  background: linear-gradient(160deg, rgba(201,168,76,.12) 0%, rgba(201,168,76,.04) 100%);
-  transform: translateY(-2px) translateX(2px);
-  box-shadow: 0 8px 24px rgba(0,0,0,.3);
-}
+.habilidade-btn { display: flex; align-items: center; gap: 1rem; padding: 1rem 1.2rem; border: 1px solid var(--border); border-radius: 14px; background: linear-gradient(160deg, rgba(255,255,255,.07) 0%, rgba(255,255,255,.03) 100%); cursor: pointer; color: var(--text); text-align: left; transition: all .2s cubic-bezier(.4,0,.2,1); width: 100%; position: relative; overflow: hidden; }
+.habilidade-btn:hover { border-color: var(--border-gold); background: linear-gradient(160deg, rgba(201,168,76,.12) 0%, rgba(201,168,76,.04) 100%); transform: translateY(-2px) translateX(2px); box-shadow: 0 8px 24px rgba(0,0,0,.3); }
 .hab-nome { font-family: 'Cinzel', serif; font-size: 13px; letter-spacing: .5px; margin-bottom: 3px; color: var(--gold-light); }
 .hab-desc { font-size: 12px; opacity: .65; line-height: 1.55; }
 
-/* ── Diary entries ── */
-.diario-entry {
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  padding: 1rem 1.1rem;
-  background: linear-gradient(160deg, rgba(255,255,255,.05) 0%, rgba(255,255,255,.02) 100%);
-  margin-bottom: .7rem;
-  position: relative;
-  overflow: hidden;
-}
-.diario-entry::before {
-  content: '';
-  position: absolute;
-  left: 0; top: 0; bottom: 0;
-  width: 2px;
-  background: linear-gradient(180deg, var(--gold), transparent);
-}
+.diario-entry { border: 1px solid var(--border); border-radius: 12px; padding: 1rem 1.1rem; background: linear-gradient(160deg, rgba(255,255,255,.05) 0%, rgba(255,255,255,.02) 100%); margin-bottom: .7rem; position: relative; overflow: hidden; }
+.diario-entry::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 2px; background: linear-gradient(180deg, var(--gold), transparent); }
 .diario-nivel { font-family: 'Cinzel', serif; font-size: 9px; letter-spacing: 1.5px; opacity: .35; margin-bottom: .4rem; }
 .diario-texto { font-size: 14px; font-style: italic; font-weight: 300; line-height: 1.9; opacity: .88; }
 
-/* ── Stats grid mais impactante ── */
-.stat-item {
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  padding: .7rem .5rem;
-  background: linear-gradient(160deg, rgba(255,255,255,.07) 0%, rgba(255,255,255,.03) 100%);
-  text-align: center;
-  transition: border-color .2s;
-}
+.stat-item { border: 1px solid var(--border); border-radius: 10px; padding: .7rem .5rem; background: linear-gradient(160deg, rgba(255,255,255,.07) 0%, rgba(255,255,255,.03) 100%); text-align: center; transition: border-color .2s; }
 .stat-item:hover { border-color: rgba(201,168,76,.25); }
 .stat-item-val   { font-family: 'Cinzel', serif; font-size: 18px; font-weight: 700; color: var(--gold-light); }
 .stat-item-label { font-size: 9px; opacity: .4; margin-top: 3px; font-family: 'Cinzel', serif; letter-spacing: .5px; }
 
-/* ── Hub buttons mais largos e bonitos ── */
 .hub-btns { display: flex; flex-wrap: wrap; gap: 7px; justify-content: center; margin-top: .8rem; }
-.hub-btn {
-  padding: 9px 14px;
-  font-size: 10px;
-  min-width: 112px;
-  border-radius: 10px;
-  background: linear-gradient(160deg, rgba(255,255,255,.08) 0%, rgba(255,255,255,.03) 100%);
-  border-color: var(--border);
-  transition: all .2s;
-}
-.hub-btn:hover:not(:disabled) {
-  border-color: var(--border-gold);
-  background: linear-gradient(160deg, rgba(201,168,76,.12) 0%, rgba(201,168,76,.04) 100%);
-  color: var(--gold-light);
-  transform: translateY(-1px);
-}
+.hub-btn { padding: 9px 14px; font-size: 10px; min-width: 112px; border-radius: 10px; background: linear-gradient(160deg, rgba(255,255,255,.08) 0%, rgba(255,255,255,.03) 100%); border-color: var(--border); transition: all .2s; }
+.hub-btn:hover:not(:disabled) { border-color: var(--border-gold); background: linear-gradient(160deg, rgba(201,168,76,.12) 0%, rgba(201,168,76,.04) 100%); color: var(--gold-light); transform: translateY(-1px); }
 
-/* ── Modal enriquecido ── */
-.modal-box {
-  position: relative; z-index: 9001;
-  background: linear-gradient(160deg, #13101f 0%, #0f0c1a 100%);
-  border: 1px solid var(--border-gold);
-  border-radius: 18px;
-  padding: 1.8rem 1.5rem;
-  max-width: 400px; width: 92%;
-  text-align: center;
-  animation: modalIn .3s cubic-bezier(.34,1.56,.64,1);
-  box-shadow: 0 40px 100px rgba(0,0,0,.7), 0 0 60px rgba(201,168,76,.06);
-}
-.modal-box::before {
-  content: '';
-  position: absolute;
-  top: 0; left: 20%; right: 20%;
-  height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(201,168,76,.5), transparent);
-}
+.modal-box { position: relative; z-index: 9001; background: linear-gradient(160deg, #13101f 0%, #0f0c1a 100%); border: 1px solid var(--border-gold); border-radius: 18px; padding: 1.8rem 1.5rem; max-width: 400px; width: 92%; text-align: center; animation: modalIn .3s cubic-bezier(.34,1.56,.64,1); box-shadow: 0 40px 100px rgba(0,0,0,.7), 0 0 60px rgba(201,168,76,.06); }
+.modal-box::before { content: ''; position: absolute; top: 0; left: 20%; right: 20%; height: 1px; background: linear-gradient(90deg, transparent, rgba(201,168,76,.5), transparent); }
 @keyframes modalIn { from{transform:scale(.88) translateY(8px);opacity:0} to{transform:scale(1) translateY(0);opacity:1} }
 
-/* ── Notif box aprimorada ── */
-#notif-box {
-  position: fixed;
-  top: 20px; left: 50%;
-  transform: translateX(-50%);
-  padding: 9px 20px;
-  border-radius: 30px;
-  font-size: 13px;
-  font-family: 'Cinzel', serif;
-  letter-spacing: .5px;
-  z-index: 9999;
-  background: rgba(13,11,24,.9);
-  border: 1px solid var(--border-gold);
-  color: var(--gold-light);
-  display: none;
-  text-align: center;
-  white-space: nowrap;
-  animation: notifIn .35s cubic-bezier(.34,1.56,.64,1);
-  backdrop-filter: blur(16px);
-  box-shadow: 0 8px 32px rgba(0,0,0,.5), 0 0 20px rgba(201,168,76,.1);
-}
+#notif-box { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); padding: 9px 20px; border-radius: 30px; font-size: 13px; font-family: 'Cinzel', serif; letter-spacing: .5px; z-index: 9999; background: rgba(13,11,24,.9); border: 1px solid var(--border-gold); color: var(--gold-light); display: none; text-align: center; white-space: nowrap; animation: notifIn .35s cubic-bezier(.34,1.56,.64,1); backdrop-filter: blur(16px); box-shadow: 0 8px 32px rgba(0,0,0,.5), 0 0 20px rgba(201,168,76,.1); }
 
-/* ── Win screen mais celebratória ── */
-@keyframes levelPulse {
-  0%   { transform: scale(1); }
-  40%  { transform: scale(1.04); }
-  100% { transform: scale(1); }
-}
-.level-banner {
-  background: linear-gradient(160deg, rgba(201,168,76,.15), rgba(201,168,76,.05));
-  border: 1px solid var(--border-gold);
-  border-radius: 12px;
-  padding: 1rem 1.2rem;
-  text-align: center;
-  margin-bottom: 1rem;
-  font-family: 'Cinzel', serif;
-  color: var(--gold-light);
-  animation: levelPulse .7s ease;
-  box-shadow: 0 0 30px rgba(201,168,76,.1);
-}
+.level-banner { background: linear-gradient(160deg, rgba(201,168,76,.15), rgba(201,168,76,.05)); border: 1px solid var(--border-gold); border-radius: 12px; padding: 1rem 1.2rem; text-align: center; margin-bottom: 1rem; font-family: 'Cinzel', serif; color: var(--gold-light); animation: levelPulse .7s ease; box-shadow: 0 0 30px rgba(201,168,76,.1); }
+@keyframes levelPulse { 0%{ transform: scale(1); } 40%{ transform: scale(1.04); } 100%{ transform: scale(1); } }
 
-/* ── Escolha da masmorra ── */
-.escolha-box {
-  border: 1px solid var(--border);
-  border-radius: 14px;
-  padding: 1.2rem;
-  background: linear-gradient(160deg, rgba(255,255,255,.06) 0%, rgba(255,255,255,.02) 100%);
-}
-.escolha-btn {
-  border-radius: 12px !important;
-  border-color: var(--border) !important;
-  background: linear-gradient(160deg,rgba(255,255,255,.07),rgba(255,255,255,.03)) !important;
-  margin-bottom: 8px;
-  font-size: 13px !important;
-  line-height: 1.5;
-  transition: all .2s !important;
-}
-.escolha-btn:hover:not(:disabled) {
-  border-color: var(--border-gold) !important;
-  background: linear-gradient(160deg,rgba(201,168,76,.12),rgba(201,168,76,.04)) !important;
-  transform: translateX(4px) !important;
-}
+.escolha-box { border: 1px solid var(--border); border-radius: 14px; padding: 1.2rem; background: linear-gradient(160deg, rgba(255,255,255,.06) 0%, rgba(255,255,255,.02) 100%); }
+.escolha-btn { border-radius: 12px !important; border-color: var(--border) !important; background: linear-gradient(160deg,rgba(255,255,255,.07),rgba(255,255,255,.03)) !important; margin-bottom: 8px; font-size: 13px !important; line-height: 1.5; transition: all .2s !important; }
+.escolha-btn:hover:not(:disabled) { border-color: var(--border-gold) !important; background: linear-gradient(160deg,rgba(201,168,76,.12),rgba(201,168,76,.04)) !important; transform: translateX(4px) !important; }
 
-/* ── qbox redesenhada ── */
-.qbox {
-  border: 1px solid var(--border);
-  border-radius: 14px;
-  padding: 1.4rem;
-  background: linear-gradient(160deg, rgba(255,255,255,.07) 0%, rgba(255,255,255,.03) 100%);
-  margin-bottom: 1rem;
-}
+.qbox { border: 1px solid var(--border); border-radius: 14px; padding: 1.4rem; background: linear-gradient(160deg, rgba(255,255,255,.07) 0%, rgba(255,255,255,.03) 100%); margin-bottom: 1rem; }
 .qtext { font-size: 17px; font-style: italic; font-weight: 300; line-height: 1.8; text-align: center; margin-bottom: 1.2rem; color: var(--parchment); }
 
-/* ── Scrollbars uniformes ── */
 ::-webkit-scrollbar { width: 3px; }
 ::-webkit-scrollbar-thumb { background: rgba(201,168,76,.25); border-radius: 3px; }
 ::-webkit-scrollbar-track { background: transparent; }
 
-/* ── Transições de tela mais fluidas ── */
 .screen.active { display: block; animation: fadeUp .3s cubic-bezier(.4,0,.2,1); }
-@keyframes fadeUp {
-  from { opacity: 0; transform: translateY(12px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
+@keyframes fadeUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
 
-/* ── Cena de campanha ── */
-.cena-box {
-  border: 1px solid var(--border);
-  border-radius: 14px;
-  padding: 1.2rem;
-  background: linear-gradient(160deg, rgba(0,0,0,.25) 0%, rgba(0,0,0,.1) 100%);
-  margin-bottom: 1rem;
-  max-height: 260px;
-  overflow-y: auto;
-  position: relative;
-}
-.cena-box::before {
-  content: '';
-  position: absolute;
-  top: 0; left: 15%; right: 15%;
-  height: 1px;
-  background: linear-gradient(90deg, transparent, var(--border-gold), transparent);
-}
+.cena-box { border: 1px solid var(--border); border-radius: 14px; padding: 1.2rem; background: linear-gradient(160deg, rgba(0,0,0,.25) 0%, rgba(0,0,0,.1) 100%); margin-bottom: 1rem; max-height: 260px; overflow-y: auto; position: relative; }
+.cena-box::before { content: ''; position: absolute; top: 0; left: 15%; right: 15%; height: 1px; background: linear-gradient(90deg, transparent, var(--border-gold), transparent); }
 .cena-arte-wrap { text-align: center; margin-bottom: .8rem; }
 .cena-art  { font-size: 44px; filter: drop-shadow(0 4px 16px rgba(201,168,76,.25)); }
 .cena-texto { font-size: 14px; line-height: 1.95; font-style: italic; font-weight: 300; opacity: .92; white-space: pre-wrap; }
 
-/* ── Rest box ── */
-.rest-box {
-  border: 1px solid rgba(100,180,255,.18);
-  border-radius: 14px;
-  padding: 1.2rem;
-  background: linear-gradient(160deg, rgba(50,100,200,.06) 0%, rgba(50,100,200,.02) 100%);
-}
+.rest-box { border: 1px solid rgba(100,180,255,.18); border-radius: 14px; padding: 1.2rem; background: linear-gradient(160deg, rgba(50,100,200,.06) 0%, rgba(50,100,200,.02) 100%); }
+.passiva-loja-info { background: linear-gradient(160deg, rgba(100,180,255,.08) 0%, rgba(100,180,255,.03) 100%); border: 1px solid rgba(100,180,255,.15); border-radius: 10px; padding: .6rem 1rem; font-size: 12px; margin-bottom: .8rem; text-align: center; line-height: 1.6; }
 
-/* ── Passiva loja info ── */
-.passiva-loja-info {
-  background: linear-gradient(160deg, rgba(100,180,255,.08) 0%, rgba(100,180,255,.03) 100%);
-  border: 1px solid rgba(100,180,255,.15);
-  border-radius: 10px;
-  padding: .6rem 1rem;
-  font-size: 12px;
-  margin-bottom: .8rem;
-  text-align: center;
-  line-height: 1.6;
-}
-
-/* ── Slot cards ── */
-.slot-card {
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  padding: .85rem;
-  background: linear-gradient(160deg, rgba(255,255,255,.07) 0%, rgba(255,255,255,.03) 100%);
-  min-height: 110px;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  transition: border-color .2s;
-}
+.slot-card { border: 1px solid var(--border); border-radius: 12px; padding: .85rem; background: linear-gradient(160deg, rgba(255,255,255,.07) 0%, rgba(255,255,255,.03) 100%); min-height: 110px; display: flex; flex-direction: column; gap: 4px; transition: border-color .2s; }
 .slot-ocupado { border-color: rgba(201,168,76,.2); }
 .slot-ativo   { border-color: rgba(100,255,150,.35) !important; background: linear-gradient(160deg,rgba(100,255,150,.07),rgba(100,255,150,.02)) !important; box-shadow: 0 0 18px rgba(100,255,150,.07); }
 .slot-vazio   { opacity: .4; justify-content: center; align-items: center; text-align: center; }
 
-/* ── Ranking ── */
-.ranking-cat {
-  border: 1px solid var(--border);
-  border-radius: 14px;
-  padding: 1rem;
-  background: linear-gradient(160deg, rgba(255,255,255,.06) 0%, rgba(255,255,255,.02) 100%);
-  margin-bottom: .8rem;
-}
-.ranking-first {
-  background: linear-gradient(160deg,rgba(201,168,76,.12),rgba(201,168,76,.04)) !important;
-  border: 1px solid rgba(201,168,76,.25);
-}
+.ranking-cat { border: 1px solid var(--border); border-radius: 14px; padding: 1rem; background: linear-gradient(160deg, rgba(255,255,255,.06) 0%, rgba(255,255,255,.02) 100%); margin-bottom: .8rem; }
+.ranking-first { background: linear-gradient(160deg,rgba(201,168,76,.12),rgba(201,168,76,.04)) !important; border: 1px solid rgba(201,168,76,.25); }
 
-/* ── Game over screen ── */
-.gameover-run-stats {
-  border: 1px solid rgba(192,57,43,.2);
-  border-radius: 14px;
-  padding: 1rem;
-  background: linear-gradient(160deg, rgba(192,57,43,.06) 0%, rgba(192,57,43,.02) 100%);
-  margin-bottom: .8rem;
-}
-.gameover-totals {
-  border: 1px solid var(--border);
-  border-radius: 14px;
-  padding: 1rem;
-  background: linear-gradient(160deg, rgba(255,255,255,.05) 0%, rgba(255,255,255,.02) 100%);
-  margin-bottom: .8rem;
-}
+.item-card { border: 1px solid var(--border); border-radius: 10px; padding: 9px 13px; background: linear-gradient(160deg, rgba(255,255,255,.07) 0%, rgba(255,255,255,.03) 100%); cursor: pointer; font-size: 12px; transition: all .2s; color: var(--text); line-height: 1.55; }
+.item-card:hover { background: linear-gradient(160deg, rgba(201,168,76,.14) 0%, rgba(201,168,76,.05) 100%); border-color: var(--border-gold); transform: translateY(-2px); box-shadow: 0 6px 18px rgba(0,0,0,.3); }
 
-/* ── Botão de fuga com indicador ── */
-.flee-btn { position: relative; }
-.flee-chance {
-  position: absolute;
-  top: -6px; right: -6px;
-  background: rgba(39,174,96,.85);
-  border-radius: 10px;
-  font-size: 8px;
-  padding: 1px 5px;
-  font-family: 'Cinzel', serif;
-  color: #fff;
-  pointer-events: none;
-}
-
-/* ── Inline item description melhorada ── */
-.item-card {
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  padding: 9px 13px;
-  background: linear-gradient(160deg, rgba(255,255,255,.07) 0%, rgba(255,255,255,.03) 100%);
-  cursor: pointer;
-  font-size: 12px;
-  transition: all .2s;
-  color: var(--text);
-  line-height: 1.55;
-}
-.item-card:hover {
-  background: linear-gradient(160deg, rgba(201,168,76,.14) 0%, rgba(201,168,76,.05) 100%);
-  border-color: var(--border-gold);
-  transform: translateY(-2px);
-  box-shadow: 0 6px 18px rgba(0,0,0,.3);
-}
-
-/* ── Momentum no battle screen ── */
 #momentum-bar-wrap { margin-bottom: .5rem; }
 
-/* ── Responsive aprimorado ── */
+.flee-btn { position: relative; }
+.flee-chance { position: absolute; top: -6px; right: -6px; background: rgba(39,174,96,.85); border-radius: 10px; font-size: 8px; padding: 1px 5px; font-family: 'Cinzel', serif; color: #fff; pointer-events: none; }
+
 @media (max-width: 600px) {
   #happ { border-radius: 0; }
   body  { padding: 0; align-items: flex-start; }
@@ -1216,7 +771,6 @@ h3 {
   .buff-chip { font-size: 9px; padding: 2px 6px; }
   .enemy-art { font-size: 44px; }
 }
-
   </style>
 </head>
 <body>
@@ -1438,401 +992,8 @@ h3 {
 <script src="data.js"></script>
 <script src="save.js"></script>
 <script src="campanha.js"></script>
-<script src="game.js"></script> // ══════════════════════════════════════════════════════════
-//  campanha-patch.js — v1
-//  Enhancements visuais para a campanha sem alterar campanha.js:
-//  · Efeito typewriter nas cenas narrativas
-//  · Ornamentos SVG por capítulo
-//  · Painel de humor de aliados em tempo real
-//  · Boss preview cinematográfico
-//  · Transição "virar página" entre cenas
-//  · rel-fill com classes .pos/.neg
-// ══════════════════════════════════════════════════════════
-
-(function () {
-  'use strict';
-
-  // ── RUNAS SVG POR CAPÍTULO ──
-  const RUNAS_SVG = {
-    prologo: `<svg viewBox="0 0 60 30" width="60" height="30">
-      <path d="M5 15 Q15 5 30 15 Q45 5 55 15"/>
-      <path d="M5 15 Q15 25 30 15 Q45 25 55 15"/>
-      <circle cx="30" cy="15" r="4"/>
-      <path d="M30 4 L30 11 M30 19 L30 26"/>
-    </svg>`,
-
-    cap1: `<svg viewBox="0 0 60 30" width="60" height="30">
-      <path d="M10 25 L30 5 L50 25"/>
-      <path d="M18 17 L42 17"/>
-      <circle cx="30" cy="15" r="3"/>
-      <path d="M22 25 L30 10 L38 25"/>
-    </svg>`,
-
-    cap2: `<svg viewBox="0 0 60 30" width="60" height="30">
-      <rect x="20" y="8" width="20" height="14" rx="1"/>
-      <path d="M30 8 L30 22 M20 15 L40 15"/>
-      <path d="M14 5 Q10 15 14 25 M46 5 Q50 15 46 25"/>
-    </svg>`,
-
-    cap3: `<svg viewBox="0 0 60 30" width="60" height="30">
-      <circle cx="30" cy="15" r="10"/>
-      <circle cx="30" cy="15" r="5"/>
-      <path d="M30 5 L30 2 M30 28 L30 25 M20 15 L17 15 M43 15 L40 15"/>
-      <path d="M22.9 7.9 L20.8 5.8 M39.2 22.2 L37.1 20.1"/>
-    </svg>`,
-
-    cap4: `<svg viewBox="0 0 60 30" width="60" height="30">
-      <path d="M10 25 L30 2 L50 25 Z"/>
-      <path d="M20 25 L30 8 L40 25"/>
-      <path d="M15 18 L45 18"/>
-      <circle cx="30" cy="14" r="2"/>
-    </svg>`,
-
-    cap5: `<svg viewBox="0 0 80 30" width="80" height="30">
-      <path d="M5 20 L20 5 L40 20 L60 5 L75 20"/>
-      <path d="M20 5 L20 25 M60 5 L60 25"/>
-      <path d="M5 20 L75 20"/>
-      <circle cx="40" cy="15" r="5"/>
-      <circle cx="40" cy="15" r="2"/>
-    </svg>`,
-  };
-
-  // ── FALAS CONTEXTUAIS (para tooltip do painel de humor) ──
-  const NPC_FALAS_PANEL = {
-    dumbledore: { alto:'✨ Você me surpreende.', medio:'📜 Continue, Escolhido.', baixo:'😔 Esperava mais de você.', critico:'⚠️ Estou decepcionado.' },
-    hermione:   { alto:'📚 Impressionante.', medio:'🤔 Entendo sua escolha.', baixo:'😤 Isso foi impulsivo.', critico:'😠 Completamente irresponsável.' },
-    snape:      { alto:'🖼️ ...Adequado.', medio:'😒 Mediano. Mas vivo.', baixo:'💀 Imbecil.', critico:'😡 Você me envergonha.' },
-    neville:    { alto:'🌿 Você é incrível!', medio:'😊 Confio em você.', baixo:'😟 Tá tudo bem com você?', critico:'😰 Algumas escolhas me assustam.' },
-    luna:       { alto:'🌙 As estrelas aprovam.', medio:'🌿 Há mais de uma via.', baixo:'🍄 O vento mudou.', critico:'🌑 Sinto névoa ao seu redor.' },
-    draco:      { alto:'🐉 Talvez eu tenha me enganado sobre você.', medio:'😏 Interessante.', baixo:'😒 Típico.', critico:'😤 Sabia que não podia confiar.' },
-    ginny:      { alto:'⚡ Orgulhosa de você!', medio:'😊 Tá no caminho.', baixo:'🤨 Tem certeza disso?', critico:'😡 Isso foi um erro enorme.' },
-  };
-
-  function getHumorLabel(val) {
-    if (val >= 30)  return 'alto';
-    if (val >= 0)   return 'medio';
-    if (val >= -30) return 'baixo';
-    return 'critico';
-  }
-  function getHumorClass(val) {
-    if (val >= 30)  return 'h-alto';
-    if (val >= 0)   return 'h-medio';
-    if (val >= -30) return 'h-baixo';
-    return 'h-baixo';
-  }
-  function getChipHumor(val) {
-    if (val >= 30)  return 'alto';
-    if (val >= 0)   return 'medio';
-    if (val >= -30) return 'baixo';
-    return 'neutro';
-  }
-
-  // ── TYPEWRITER ──
-  function typewriterEffect(el) {
-    if (!el) return;
-    const raw = el.innerHTML;
-    el.classList.add('typewriter-active');
-
-    // Divide em "tokens" (tags HTML ou chars simples)
-    const tokens = [];
-    let i = 0;
-    while (i < raw.length) {
-      if (raw[i] === '<') {
-        const end = raw.indexOf('>', i);
-        tokens.push({ tag: true, text: raw.slice(i, end + 1) });
-        i = end + 1;
-      } else {
-        tokens.push({ tag: false, text: raw[i] });
-        i++;
-      }
-    }
-
-    el.innerHTML = '';
-    let t = 0;
-    const BASE = 22; // ms por char
-
-    function step() {
-      if (t >= tokens.length) {
-        el.classList.remove('typewriter-active');
-        return;
-      }
-      const tok = tokens[t++];
-      if (tok.tag) {
-        el.innerHTML += tok.text;
-      } else {
-        const span = document.createElement('span');
-        span.className = 'char';
-        span.style.animationDelay = '0ms';
-        span.textContent = tok.text;
-        el.appendChild(span);
-      }
-      const delay = tok.tag ? 0 : (tok.text === '\n' || tok.text === ' ' ? BASE * .5 : BASE);
-      setTimeout(step, delay);
-    }
-    setTimeout(step, 80);
-  }
-
-  // ── INJETAR RUNA SVG no header ──
-  function injectCapRuneSvg(capId, headerEl) {
-    if (!headerEl) return;
-    const svg = RUNAS_SVG[capId] || RUNAS_SVG['prologo'];
-    const existing = headerEl.querySelector('.cap-rune-svg');
-    if (existing) existing.remove();
-
-    const wrap = document.createElement('div');
-    wrap.className = 'cap-rune-svg';
-    wrap.innerHTML = svg;
-
-    // Insere antes do kicker
-    const kicker = headerEl.querySelector('.cap-kicker');
-    if (kicker) headerEl.insertBefore(wrap, kicker);
-    else headerEl.prepend(wrap);
-  }
-
-  // ── PAINEL DE HUMOR ──
-  function buildHumorPanel() {
-    if (!window.G || !G.campanha) return '';
-    const rel  = G.campanha.relacionamentos;
-    const npcs = [
-      { id:'dumbledore', nome:'Dumbledore', icon:'🌟' },
-      { id:'hermione',   nome:'Hermione',   icon:'📚' },
-      { id:'snape',      nome:'Snape',      icon:'🖼️' },
-      { id:'neville',    nome:'Neville',    icon:'🌿' },
-      { id:'luna',       nome:'Luna',       icon:'🌙' },
-      { id:'draco',      nome:'Draco',      icon:'🐉' },
-      { id:'ginny',      nome:'Ginny',      icon:'⚡' },
-    ];
-
-    const chips = npcs.map(n => {
-      const val   = rel[n.id] || 0;
-      const humor = getHumorLabel(val);
-      const hCls  = getHumorClass(val);
-      const fala  = NPC_FALAS_PANEL[n.id]?.[humor] || '';
-      return `<div class="humor-npc" title="${fala}">
-        <span>${n.icon}</span>
-        <div class="humor-npc-dot ${hCls}"></div>
-        <span class="humor-npc-nome">${n.nome.slice(0,4)}</span>
-      </div>`;
-    }).join('');
-
-    return `<div class="humor-panel">
-      <div class="humor-panel-label">Estado dos aliados</div>
-      ${chips}
-    </div>`;
-  }
-
-  // ── ENRIQUECER ALIADOS CHIPS com data-humor ──
-  function enrichAliadoChips(container) {
-    if (!window.G || !G.campanha) return;
-    const rel = G.campanha.relacionamentos;
-    container.querySelectorAll('.aliado-chip').forEach(chip => {
-      // tenta inferir o NPC pelo texto do chip
-      const txt = chip.textContent.toLowerCase();
-      const npcId = Object.keys(rel).find(k => txt.includes(k.slice(0,4)));
-      if (npcId) {
-        const val = rel[npcId] || 0;
-        chip.setAttribute('data-humor', getChipHumor(val));
-      }
-    });
-  }
-
-  // ── ENRIQUECER INIMIGO PREVIEW ──
-  function enrichInimigoPrev(container) {
-    const prev = container.querySelector('.inimigo-preview');
-    if (!prev) return;
-
-    // Pega dados do inimigo do _inimigoCache
-    const inimigo = window._inimigoCache;
-    if (!inimigo) return;
-
-    // Já enriquecido?
-    if (prev.dataset.enriched) return;
-    prev.dataset.enriched = '1';
-
-    const stars = '⭐'.repeat(inimigo.dificuldade || 3);
-
-    prev.innerHTML = `
-      <div class="inimigo-preview-inner">
-        <div class="inimigo-art-wrap">
-          <span class="inimigo-art-emoji">${inimigo.art}</span>
-        </div>
-        <div class="inimigo-nome">${inimigo.nome}</div>
-        <div class="inimigo-dificuldade">
-          ${Array.from({length: inimigo.dificuldade || 3}, () =>
-            '<span class="dif-star">◆</span>'
-          ).join('')}
-        </div>
-        <div class="inimigo-hp-bar">
-          <div class="inimigo-hp-bar-fill"></div>
-        </div>
-      </div>
-      <div class="inimigo-fala-wrap">
-        <div class="inimigo-fala">${inimigo.fala}</div>
-      </div>`;
-  }
-
-  // ── ENRIQUECER REL-FILL com classes .pos/.neg ──
-  function enrichRelFills(container) {
-    container.querySelectorAll('.rel-fill').forEach(el => {
-      const style = el.getAttribute('style') || '';
-      if (style.includes('7dff9a') || style.includes('7dff')) {
-        el.classList.add('pos');
-        el.style.background = '';
-      } else if (style.includes('ff7d7d') || style.includes('ff7d')) {
-        el.classList.add('neg');
-        el.style.background = '';
-      }
-    });
-  }
-
-  // ── MASTER PATCH — observa mudanças no campanha-content ──
-  function patchCampanhaContent() {
-    const el = document.getElementById('campanha-content');
-    if (!el) return;
-
-    const run = () => {
-      // 1) Runa SVG no cap-header
-      const header = el.querySelector('.cap-header');
-      if (header && window.G?.campanha?.capitulo) {
-        injectCapRuneSvg(G.campanha.capitulo, header);
-
-        // Ornamento de linha dupla no topo do header
-        if (!header.querySelector('.cap-header-ornament')) {
-          const orn = document.createElement('div');
-          orn.className = 'cap-header-ornament';
-          orn.innerHTML = '✦';
-          header.prepend(orn);
-        }
-      }
-
-      // 2) Typewriter nas cenas narrativas (só se texto não foi ainda animado)
-      const cenaTexto = el.querySelector('.cena-texto:not(.tw-done)');
-      if (cenaTexto && !cenaTexto.classList.contains('tw-done')) {
-        cenaTexto.classList.add('tw-done');
-        typewriterEffect(cenaTexto);
-      }
-
-      // 3) Boss preview enriquecido
-      enrichInimigoPrev(el);
-
-      // 4) Aliados chips com data-humor
-      enrichAliadoChips(el);
-
-      // 5) Painel de humor no rodapé
-      if (!el.querySelector('.humor-panel') && window.G?.campanha?.iniciada) {
-        const panel = document.createElement('div');
-        panel.innerHTML = buildHumorPanel();
-        el.appendChild(panel.firstElementChild || panel);
-      } else {
-        // Atualiza dots existentes
-        const panel = el.querySelector('.humor-panel');
-        if (panel && window.G?.campanha) {
-          const rel  = G.campanha.relacionamentos;
-          panel.querySelectorAll('.humor-npc').forEach(npc => {
-            const nome = npc.querySelector('.humor-npc-nome')?.textContent;
-            if (!nome) return;
-            const id = Object.keys(rel).find(k => k.toLowerCase().startsWith(nome.toLowerCase()));
-            if (!id) return;
-            const val = rel[id] || 0;
-            const dot = npc.querySelector('.humor-npc-dot');
-            if (dot) {
-              dot.className = 'humor-npc-dot ' + getHumorClass(val);
-            }
-          });
-        }
-      }
-
-      // 6) Rel fills
-      enrichRelFills(el);
-    };
-
-    // MutationObserver para capturar re-renders
-    const obs = new MutationObserver(() => {
-      requestAnimationFrame(run);
-    });
-    obs.observe(el, { childList: true, subtree: true });
-
-    // Roda uma vez agora
-    run();
-  }
-
-  // ── PATCH NO FINAL DA CAMPANHA ──
-  function patchFinalContent() {
-    const el = document.getElementById('campanha-final-content');
-    if (!el) return;
-
-    const obs = new MutationObserver(() => {
-      requestAnimationFrame(() => {
-        enrichRelFills(el);
-
-        // Typewriter no final-texto
-        const ft = el.querySelector('.final-texto:not(.tw-done)');
-        if (ft) {
-          ft.classList.add('tw-done');
-          // Typewriter mais rápido para o final
-          typewriterEffect(ft);
-        }
-      });
-    });
-    obs.observe(el, { childList: true, subtree: true });
-  }
-
-  // ── INICIALIZAÇÃO ──
-  window.addEventListener('load', () => {
-    patchCampanhaContent();
-    patchFinalContent();
-
-    // Patch no renderCampanha original — injeta humor panel sempre que renderiza
-    const _origRender = window.renderCampanha;
-    if (typeof _origRender === 'function') {
-      window.renderCampanha = function () {
-        _origRender.apply(this, arguments);
-        // Pequeno delay para o DOM terminar de renderizar
-        setTimeout(() => {
-          const el = document.getElementById('campanha-content');
-          if (!el) return;
-          if (!el.querySelector('.humor-panel') && window.G?.campanha?.iniciada) {
-            const panel = document.createElement('div');
-            panel.innerHTML = buildHumorPanel();
-            const child = panel.firstElementChild || panel;
-            el.appendChild(child);
-          }
-        }, 60);
-      };
-    }
-
-    // Patch no mostrarFeedbackRelacionamento para animar dots
-    const _origFeed = window.mostrarFeedbackRelacionamento;
-    if (typeof _origFeed === 'function') {
-      window.mostrarFeedbackRelacionamento = function (relObj) {
-        _origFeed.apply(this, arguments);
-        // Após feedback, pulsa os dots afetados
-        setTimeout(() => {
-          const panel = document.querySelector('.humor-panel');
-          if (!panel || !window.G?.campanha) return;
-          const rel = G.campanha.relacionamentos;
-          Object.keys(relObj || {}).forEach(npcId => {
-            const val = rel[npcId] || 0;
-            const nomes = panel.querySelectorAll('.humor-npc-nome');
-            nomes.forEach(nameEl => {
-              if (npcId.toLowerCase().startsWith(nameEl.textContent.toLowerCase())) {
-                const dot = nameEl.closest('.humor-npc')?.querySelector('.humor-npc-dot');
-                if (dot) {
-                  dot.className = 'humor-npc-dot ' + getHumorClass(val);
-                  dot.style.animation = 'none';
-                  requestAnimationFrame(() => {
-                    dot.style.animation = '';
-                  });
-                }
-              }
-            });
-          });
-        }, 350);
-      };
-    }
-  });
-
-})();
+<script src="game.js"></script>
+<script src="campanha-patch.js"></script>
 
 <script>
 // ════════════════════════════════════════
